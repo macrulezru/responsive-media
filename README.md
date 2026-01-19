@@ -1,21 +1,23 @@
+npm install responsive-media
+
 # responsive-media
 
-Утилита для реактивного состояния на основе CSS media queries без зависимостей. Есть интеграция с Vue 3 (Composition API).
+A utility for reactive state based on CSS media queries. Includes integration with Vue 3 (Composition API).
 
-## Установка
+## Installation
 
 ```
 npm install responsive-media
 ```
 
-## Использование без Vue
+## Usage without Vue
 
-### Получение состояния
+### Getting the state
 
 ```ts
 import { responsiveState } from 'responsive-media';
 
-// Получить текущее состояние:
+// Get the current state:
 const { mobile, tablet, desktop } = responsiveState.proxy;
 
 console.log('isMobile:', mobile);
@@ -23,23 +25,22 @@ console.log('isTablet:', tablet);
 console.log('isDesktop:', desktop);
 ```
 
-### Подписка на изменения
+### Subscribing to changes
 
 ```ts
-// Подписаться на изменения состояния:
+// Subscribe to state changes:
 const unsubscribe = responsiveState.subscribe((state) => {
-  console.log('Изменилось состояние:', state);
+  console.log('State changed:', state);
   // state.mobile, state.tablet, state.desktop
 });
 
-// Для отписки вызовите:
+// To unsubscribe:
 unsubscribe();
 ```
 
-## Использование с Vue 3 (Composition API)
+## Usage with Vue 3 (Composition API)
 
-
-### Подключение плагина
+### Plugin registration
 
 ```ts
 import { createApp } from 'vue';
@@ -48,27 +49,26 @@ import App from './App.vue';
 
 const app = createApp(App);
 
-// Использовать стандартные точки:
+// Use default breakpoints:
 app.use(ResponsivePlugin);
 
-// Или передать свою конфигурацию точек (теперь можно комбинировать условия):
+// Or provide your own breakpoints (now you can combine conditions):
 app.use(ResponsivePlugin, {
-  ...ResponsiveConfig, // оставить стандартные точки
+  ...ResponsiveConfig, // keep default breakpoints
   myCustom: [
     { type: 'min-width', value: 1200 },
     { type: 'aspect-ratio', value: '16/9' },
-  ], // добавить свою с несколькими условиями
+  ], // add your own with multiple conditions
   mobile: [
     { type: 'max-width', value: 500 },
     { type: 'orientation', value: 'portrait' },
-  ], // переопределить стандартную с несколькими условиями
+  ], // override default with multiple conditions
 });
 
 app.mount('#app');
 ```
 
-
-### Использование в компоненте
+### Usage in a component
 
 ```ts
 <script setup lang="ts">
@@ -76,41 +76,48 @@ import { useResponsive } from 'responsive-media';
 
 const responsive = useResponsive();
 
-// responsive.mobile, responsive.tablet, responsive.desktop и т.д.
+// responsive.mobile, responsive.tablet, responsive.desktop, etc.
 </script>
 ```
 
+## Customizing breakpoints
 
-## Кастомизация брейкпоинтов
-
-Вы можете переопределить или добавить свои брейкпоинты с помощью функции setResponsiveConfig. Теперь для каждого брейкпоинта можно указать массив условий (они будут объединены через and):
+You can override or add your own breakpoints using the setResponsiveConfig function. Now each breakpoint can be an array of conditions (they will be combined with and):
 
 ```ts
 import { setResponsiveConfig, ResponsiveConfig } from 'responsive-media';
 
 setResponsiveConfig({
-  ...ResponsiveConfig, // оставить стандартные
+  ...ResponsiveConfig, // keep default
   myCustom: [
     { type: 'min-width', value: 1200 },
     { type: 'aspect-ratio', value: '16/9' },
-  ], // добавить свой брейкпоинт с несколькими условиями
+  ], // add your own breakpoint with multiple conditions
   mobile: [
     { type: 'max-width', value: 500 },
     { type: 'orientation', value: 'portrait' },
-  ], // переопределить стандартный с несколькими условиями
+  ], // override default with multiple conditions
 });
 ```
 
-## Экспортируемые сущности
+## Exported entities
 - responsiveState
 - ResponsiveConfig
 - setResponsiveConfig
 - ResponsivePlugin (Vue)
 - useResponsive (Vue)
 
-## Формат конфигурации брейкпоинтов
+## Breakpoint config format
 
-Каждый брейкпоинт теперь описывается массивом условий (MediaQueryConfig = MediaQueryCondition[]), где каждое условие — это объект с type и value. Все условия внутри одного брейкпоинта объединяются через and (например, `(max-width: 600px) and (aspect-ratio: 16/9)`).
+Each breakpoint is now described by an array of conditions (MediaQueryConfig = MediaQueryCondition[]), where each condition is an object with type and value. All conditions within a breakpoint are combined with and (e.g., `(max-width: 600px) and (aspect-ratio: 16/9)`).
 
-## Лицензия
+## Author
+
+Danil Lisin Vladimirovich aka Macrulez
+
+GitHub: [macrulezru](https://github.com/macrulezru)
+
+Website: [macrulez.ru](https://macrulez.ru/)
+
+## License
 MIT
