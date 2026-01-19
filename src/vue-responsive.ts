@@ -10,12 +10,11 @@ const RESPONSIVE_KEY = Symbol('responsiveState');
 let vueReactiveState: any = null;
 
 export function useResponsive() {
-  // Получаем реактивный объект из provide/inject или создаём локально
   const injected = inject(RESPONSIVE_KEY);
   if (injected) return injected;
   if (!vueReactiveState) {
-    vueReactiveState = readonly(reactive({ ...responsiveState.proxy }));
-    // Синхронизируем с изменениями responsiveState
+    vueReactiveState = reactive({ ...responsiveState.proxy });
+    
     responsiveState.subscribe((state) => {
       Object.keys(state).forEach(key => {
         // @ts-ignore
@@ -34,7 +33,7 @@ export const ResponsivePlugin = {
       setResponsiveConfig(config);
     }
     if (!vueReactiveState) {
-      vueReactiveState = readonly(reactive({ ...responsiveState.proxy }));
+      vueReactiveState = reactive({ ...responsiveState.proxy });
       responsiveState.subscribe((state) => {
         Object.keys(state).forEach(key => {
           // @ts-ignore
