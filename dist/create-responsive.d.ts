@@ -7,11 +7,14 @@ declare class ReactiveResponsiveState {
     private listeners;
     proxy: ResponsiveState;
     private queries;
+    private mediaQueries;
     constructor();
     private applyConfig;
+    getMediaQueries(): Record<string, string>;
     setConfig(config: Record<string, MediaQueryConfig>): void;
     subscribe(listener: ResponsiveListener): () => boolean;
     private notify;
 }
+export declare function getResponsiveMediaQueries(): Record<string, string>;
 export declare const responsiveState: ReactiveResponsiveState;
 export declare function setResponsiveConfig(config: Record<string, MediaQueryConfig>): void;
