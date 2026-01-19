@@ -1,4 +1,3 @@
-
 import { ResponsiveConfig, type Breakpoint, type MediaQueryConfig } from './responsive.enum';
 export type { MediaQueryConfig };
 
@@ -10,6 +9,7 @@ class ReactiveResponsiveState {
   private listeners: Set<ResponsiveListener> = new Set();
   public proxy: ResponsiveState;
   private queries: Record<string, MediaQueryList> = {};
+  private mediaQueries: Record<string, string> = {};
 
   constructor() {
     this.state = {} as ResponsiveState;
@@ -33,6 +33,7 @@ class ReactiveResponsiveState {
       query.onchange = null;
     });
     this.queries = {};
+    this.mediaQueries = {};
 
     Object.keys(this.state).forEach(key => delete this.state[key as keyof ResponsiveState]);
 
@@ -46,6 +47,7 @@ class ReactiveResponsiveState {
           return `(${cond.type}: ${val})`;
         })
         .join(' and ');
+      this.mediaQueries[key] = mq;
       const query = window.matchMedia(mq);
       this.queries[key] = query;
       this.proxy[key as keyof ResponsiveState] = query.matches;
@@ -53,7 +55,15 @@ class ReactiveResponsiveState {
         this.proxy[key as keyof ResponsiveState] = e.matches;
       });
     });
+
     this.notify();
+  }
+
+  /**
+   * Получить объект сгенерированных CSS media-запросов для каждого брейкпоинта.
+   */
+  getMediaQueries(): Record<string, string> {
+    return { ...this.mediaQueries };
   }
 
   setConfig(config: Record<string, MediaQueryConfig>) {
@@ -62,7 +72,6 @@ class ReactiveResponsiveState {
 
   subscribe(listener: ResponsiveListener) {
     this.listeners.add(listener);
-
     listener(this.proxy);
     return () => this.listeners.delete(listener);
   }
@@ -70,6 +79,14 @@ class ReactiveResponsiveState {
   private notify() {
     this.listeners.forEach(listener => listener(this.proxy));
   }
+}
+
+
+/**
+ * Получить объект сгенерированных CSS media-запросов для каждого брейкпоинта.
+ */
+export function getResponsiveMediaQueries() {
+  return responsiveState.getMediaQueries();
 }
 
 export const responsiveState = new ReactiveResponsiveState();
