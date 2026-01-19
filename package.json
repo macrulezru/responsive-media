@@ -1,0 +1,45 @@
+{
+  "name": "responsive-media",
+  "version": "1.0.0",
+  "description": "Утилита для реактивного состояния на основе CSS media queries без зависимостей.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/responsive-media.git"
+  },
+  "keywords": [
+    "responsive",
+    "media-query",
+    "typescript",
+    "reactive",
+    "utility"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/vue": "^1.0.31",
+    "@typescript-eslint/eslint-plugin": "^8.53.0",
+    "@typescript-eslint/parser": "^8.53.0",
+    "eslint": "^9.39.2",
+    "eslint-plugin-vue": "^10.7.0",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.27"
+  }
+}
