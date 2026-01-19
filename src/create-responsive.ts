@@ -38,7 +38,6 @@ class ReactiveResponsiveState {
     Object.keys(this.state).forEach(key => delete this.state[key as keyof ResponsiveState]);
 
     Object.entries(config).forEach(([key, conditions]) => {
-      // Формируем строку media-запроса из массива условий
       const mq = conditions
         .map(cond => {
           const val = typeof cond.value === 'number' && !String(cond.type).includes('aspect-ratio')
@@ -59,9 +58,6 @@ class ReactiveResponsiveState {
     this.notify();
   }
 
-  /**
-   * Получить объект сгенерированных CSS media-запросов для каждого брейкпоинта.
-   */
   getMediaQueries(): Record<string, string> {
     return { ...this.mediaQueries };
   }
@@ -81,10 +77,6 @@ class ReactiveResponsiveState {
   }
 }
 
-
-/**
- * Получить объект сгенерированных CSS media-запросов для каждого брейкпоинта.
- */
 export function getResponsiveMediaQueries() {
   return responsiveState.getMediaQueries();
 }
