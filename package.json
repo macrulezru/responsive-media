@@ -1,7 +1,7 @@
 {
   "name": "responsive-media",
-  "version": "1.0.0",
-  "description": "Утилита для реактивного состояния на основе CSS media queries без зависимостей.",
+  "version": "1.0.2",
+  "description": "A utility for reactive state based on CSS media queries. Includes integration with Vue 3 (Composition API).",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -20,7 +20,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/responsive-media.git"
+    "url": "git+https://github.com/macrulezru/responsive-media.git"
+  },
+  "homepage": "https://macrulez.ru/#/en",
+  "bugs": {
+    "url": "https://github.com/macrulezru/responsive-media/issues"
   },
   "keywords": [
     "responsive",
