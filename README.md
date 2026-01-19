@@ -100,12 +100,30 @@ setResponsiveConfig({
 });
 ```
 
+
+## Getting CSS media query strings
+
+You can get the generated CSS media query strings for each breakpoint:
+
+```ts
+import { getResponsiveMediaQueries } from 'responsive-media';
+
+const mediaQueries = getResponsiveMediaQueries();
+console.log(mediaQueries);
+// {
+//   mobile: '(max-width: 767px)',
+//   tablet: '(min-width: 768px) and (max-width: 1023px)',
+//   desktop: '(min-width: 1024px)'
+// }
+```
+
 ## Exported entities
 - responsiveState
 - ResponsiveConfig
 - setResponsiveConfig
 - ResponsivePlugin (Vue)
 - useResponsive (Vue)
+- getResponsiveMediaQueries
 
 ## Breakpoint config format
 
