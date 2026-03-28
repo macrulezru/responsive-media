@@ -1,14 +1,29 @@
 {
   "name": "responsive-media",
-  "version": "1.0.7",
-  "description": "A utility for reactive state based on CSS media queries. Includes integration with Vue 3 (Composition API).",
+  "version": "1.2.0",
+  "description": "A utility for reactive state based on CSS media queries. Includes integration with Vue 3 (Composition API) and React 18+.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react-responsive.d.ts",
+      "import": "./dist/react-responsive.js",
+      "require": "./dist/react-responsive.js"
+    },
+    "./presets": {
+      "types": "./dist/presets.d.ts",
+      "import": "./dist/presets.js",
+      "require": "./dist/presets.js"
+    },
+    "./container": {
+      "types": "./dist/container-state.d.ts",
+      "import": "./dist/container-state.js",
+      "require": "./dist/container-state.js"
     }
   },
   "files": [
@@ -16,7 +31,10 @@
   ],
   "scripts": {
     "build": "tsc",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "repository": {
     "type": "git",
@@ -31,19 +49,34 @@
     "media-query",
     "typescript",
     "reactive",
-    "utility"
+    "utility",
+    "vue",
+    "react"
   ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@types/react": "^18.3.0",
     "@types/vue": "^1.0.31",
     "@typescript-eslint/eslint-plugin": "^8.53.0",
     "@typescript-eslint/parser": "^8.53.0",
+    "@vitest/coverage-v8": "^3.0.0",
     "eslint": "^9.39.2",
     "eslint-plugin-vue": "^10.7.0",
-    "typescript": "^5.9.3"
+    "jsdom": "^26.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.0.0"
   },
   "peerDependencies": {
+    "react": "^18.0.0",
     "vue": "^3.5.27"
+  },
+  "peerDependenciesMeta": {
+    "vue": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
   }
 }
