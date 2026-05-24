@@ -32,7 +32,7 @@ function ensureVueState(): ResponsiveState {
     Object.assign(vueReactiveState!, state);
   });
 
-  return vueReactiveState;
+  return vueReactiveState!;
 }
 
 // ---------------------------------------------------------------------------

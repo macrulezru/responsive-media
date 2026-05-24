@@ -3,13 +3,14 @@
     "target": "ES2018",
     "module": "ESNext",
     "declaration": true,
+    "rootDir": "src",
     "outDir": "dist",
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "moduleResolution": "bundler",
-    "types": ["vue"]
+    "types": []
   },
   "include": ["src/**/*"]
 }
