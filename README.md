@@ -4,47 +4,71 @@
   </h1>
   <img
     src="https://s3.twcstorage.ru/c9a2cc89-780f97fd-311d-4a1a-b86f-c25665c9dc46/images/npm/responsive-media.webp"
-    alt="vue-virtual-scroller-kit"
+    alt="responsive-media"
     style="max-width:100%;width:auto;height:300px;border-radius:12px"
   />
 </div>
 
-A utility for creating reactive boolean state from CSS media queries and element dimensions. Useful when you need more than CSS — when you want to **imperatively react to viewport or container changes** in JavaScript.
+Reactive boolean state from CSS media queries and element dimensions for Vanilla JS, Vue 3, and React 18+ — AND/OR conditions, container queries, ordered breakpoint helpers, rich subscription API, CSS vars sync, SSR-safe — with no required peer dependencies.
 
-- **Viewport breakpoints** — backed by `window.matchMedia`
-- **Container queries** — backed by `ResizeObserver` (JS-side evaluation)
-- **Vue 3** and **React 18+** adapters included
-- **SSR-safe** — falls back to `false` on the server
-- **Framework-agnostic** core — works with Vanilla JS, signals libraries, or any other framework
+---
+
+## Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [Config format — MediaQueryConfig](#config-format--mediaqueryconfig)
+- [Global singleton](#global-singleton)
+- [createResponsiveState — isolated instances](#createresponsivestate--isolated-instances)
+- [ContainerState — element container queries](#containerstate--element-container-queries)
+- [Subscription API](#subscription-api)
+- [Ordered breakpoint helpers](#ordered-breakpoint-helpers)
+- [Utilities](#utilities)
+- [Presets](#presets)
+- [Vue 3 integration](#vue-3-integration)
+- [React 18+ integration](#react-18-integration)
+- [TypeScript helpers](#typescript-helpers)
+- [SSR / hydration](#ssr--hydration)
+- [Architecture](#architecture)
+- [Bundle size & peer dependencies](#bundle-size--peer-dependencies)
+- [Exported API reference](#exported-api-reference)
+
+---
+
+## Features
+
+- **Framework-agnostic core** — `ReactiveResponsiveState` and `ContainerState` work with Vanilla JS, any signals library, or any framework; Vue and React are optional peer dependencies
+- **Viewport breakpoints** — backed by `window.matchMedia`; conditions combined with AND (flat array) or OR (nested array); raw media type support for `print`, `screen`, etc.
+- **Full condition vocabulary** — `min/max-width`, `min/max-height`, `orientation`, `aspect-ratio`, `prefers-color-scheme`, `prefers-reduced-motion`, `prefers-contrast`, `hover`, `pointer`, `forced-colors`, `resolution`, `display-mode`, and `raw`
+- **Container queries (JS-side)** — `ContainerState` tracks an element's dimensions via `ResizeObserver` and evaluates breakpoint conditions in JavaScript; identical API to viewport state
+- **Rich subscription API** — `subscribe`, `on`, `onEnter`, `onLeave`, `once`, `onNextChange`, `onBreakpointChange`, `waitFor`; optional debounce for `subscribe`; per-key listeners are never debounced
+- **Ordered breakpoint helpers** — `current`, `isAbove()`, `isBelow()`, `between()` for semantic viewport comparisons; order derived from config key insertion or explicit `order` option
+- **Utilities** — `syncCSSVars` (CSS custom properties), `emitDOMEvents` (DOM CustomEvents), `toSignal` (any signals library — Preact, Angular, SolidJS, Vue), `match` (pick value by first active breakpoint), `subscribeMediaQuery` (raw single query)
+- **Vue 3 adapter** — `useResponsive`, `useBreakpoints`, `useMediaQuery`, `useContainerState`; fully reactive in templates and `computed`; `ResponsivePlugin` for global config
+- **React 18+ adapter** — same four hooks; `useSyncExternalStore` for safe concurrent rendering; SSR-safe (`false` on server)
+- **Presets** — `TailwindPreset`, `BootstrapPreset`, `AccessibilityPreset` out of the box; user-preference queries (`dark`, `reducedMotion`, `highContrast`, `print`, …)
+- **SSR-safe** — all APIs check for `window` / `matchMedia` / `ResizeObserver` before use; `hydrate()` prevents layout shift on the client
+- **TypeScript** — full generics; `ConfigToState<T>` infers a boolean-state type from any config object
+
+---
 
 ## Installation
 
-```
+```bash
 npm install responsive-media
 ```
 
----
+No required peer dependencies. Vue and React adapters are available automatically when the respective package is installed:
 
-## Table of Contents
-
-1. [Quick Start](#quick-start)
-2. [Config format — MediaQueryConfig](#config-format--mediaqueryconfig)
-3. [Global singleton](#global-singleton)
-4. [createResponsiveState — isolated instances](#createresponsivestate--isolated-instances)
-5. [ContainerState — element container queries](#containerstate--element-container-queries)
-6. [Subscription API](#subscription-api)
-7. [Ordered breakpoint helpers](#ordered-breakpoint-helpers)
-8. [Utilities](#utilities)
-9. [Presets](#presets)
-10. [Vue 3 integration](#vue-3-integration)
-11. [React 18+ integration](#react-18-integration)
-12. [TypeScript helpers](#typescript-helpers)
-13. [SSR / hydration](#ssr--hydration)
-14. [Exported API reference](#exported-api-reference)
+```bash
+npm install vue@>=3.3     # for Vue composables
+npm install react@>=18    # for React hooks
+```
 
 ---
 
-## Quick Start
+## Quick start
 
 ```ts
 import { responsiveState, setResponsiveConfig } from 'responsive-media';
@@ -71,7 +95,7 @@ stop();
 
 ## Config format — MediaQueryConfig
 
-Each breakpoint is described by a `MediaQueryConfig` — an array of conditions that are combined with **AND**, or a nested array of groups combined with **OR**.
+Each breakpoint is described by a `MediaQueryConfig` — an array of conditions combined with **AND**, or a nested array of groups combined with **OR**.
 
 ### AND (flat array)
 
@@ -107,24 +131,23 @@ Use `type: 'raw'` to insert a value verbatim — useful for media types like `pr
 
 ### Supported condition types
 
-| `type`                  | Example value     | Generated query                   |
-|-------------------------|-------------------|-----------------------------------|
-| `min-width`             | `768`             | `(min-width: 768px)`              |
-| `max-width`             | `1023`            | `(max-width: 1023px)`             |
-| `min-height`            | `600`             | `(min-height: 600px)`             |
-| `max-height`            | `900`             | `(max-height: 900px)`             |
-| `orientation`           | `'portrait'`      | `(orientation: portrait)`         |
-| `aspect-ratio`          | `'16/9'`          | `(aspect-ratio: 16/9)`            |
-| `prefers-color-scheme`  | `'dark'`          | `(prefers-color-scheme: dark)`    |
-| `prefers-reduced-motion`| `'reduce'`        | `(prefers-reduced-motion: reduce)`|
-| `prefers-contrast`      | `'more'`          | `(prefers-contrast: more)`        |
-| `hover`                 | `'none'`          | `(hover: none)`                   |
-| `pointer`               | `'coarse'`        | `(pointer: coarse)`               |
-| `forced-colors`         | `'active'`        | `(forced-colors: active)`         |
-| `resolution`            | `'2dppx'`         | `(resolution: 2dppx)`             |
-| `display-mode`          | `'standalone'`    | `(display-mode: standalone)`      |
-| `raw`                   | `'print'`         | `print` *(verbatim)*              |
-| … and more              |                   |                                   |
+| `type`                   | Example value  | Generated query                    |
+|--------------------------|----------------|------------------------------------|
+| `min-width`              | `768`          | `(min-width: 768px)`               |
+| `max-width`              | `1023`         | `(max-width: 1023px)`              |
+| `min-height`             | `600`          | `(min-height: 600px)`              |
+| `max-height`             | `900`          | `(max-height: 900px)`              |
+| `orientation`            | `'portrait'`   | `(orientation: portrait)`          |
+| `aspect-ratio`           | `'16/9'`       | `(aspect-ratio: 16/9)`             |
+| `prefers-color-scheme`   | `'dark'`       | `(prefers-color-scheme: dark)`     |
+| `prefers-reduced-motion` | `'reduce'`     | `(prefers-reduced-motion: reduce)` |
+| `prefers-contrast`       | `'more'`       | `(prefers-contrast: more)`         |
+| `hover`                  | `'none'`       | `(hover: none)`                    |
+| `pointer`                | `'coarse'`     | `(pointer: coarse)`                |
+| `forced-colors`          | `'active'`     | `(forced-colors: active)`          |
+| `resolution`             | `'2dppx'`      | `(resolution: 2dppx)`              |
+| `display-mode`           | `'standalone'` | `(display-mode: standalone)`       |
+| `raw`                    | `'print'`      | `print` *(verbatim)*               |
 
 ---
 
@@ -142,15 +165,15 @@ setResponsiveConfig(
     lg: [{ type: 'min-width', value: 1024 }],
   },
   {
-    order: ['sm', 'lg'],  // for isAbove/isBelow/between
-    debounce: 50,         // ms, throttle subscribe() listeners
+    order:    ['sm', 'lg'],  // for isAbove / isBelow / between
+    debounce: 50,            // ms — throttle subscribe() listeners
   }
 );
 
-// Read the current state snapshot
+// Read a stable snapshot
 const { sm, lg } = responsiveState.getState();
 
-// Direct proxy access (live, non-debounced)
+// Live proxy access (never debounced)
 console.log(responsiveState.proxy.sm);
 
 // Get the generated CSS strings
@@ -370,12 +393,10 @@ const stop = state.syncCSSVars({ element: document.body, prefix: '--bp-' });
 stop(); // cleanup
 ```
 
-**Options:**
-
-| Option    | Default                  | Description                      |
-|-----------|--------------------------|----------------------------------|
-| `element` | `document.documentElement` | Target HTML element            |
-| `prefix`  | `'--responsive-'`        | CSS custom property name prefix  |
+| Option    | Default                    | Description                      |
+|-----------|----------------------------|----------------------------------|
+| `element` | `document.documentElement` | Target HTML element              |
+| `prefix`  | `'--responsive-'`          | CSS custom property name prefix  |
 
 ### `emitDOMEvents(target?, options?)` → stop
 
@@ -394,8 +415,6 @@ document.addEventListener('bp:desktop:leave', () => destroyDesktopChart());
 
 stop();
 ```
-
-**Options:**
 
 | Option   | Default         | Description              |
 |----------|-----------------|--------------------------|
@@ -442,7 +461,6 @@ Returns the configured breakpoint order array (or empty array if not set).
 Sets initial state from a server-side snapshot to prevent layout shift. Only updates keys that exist in the current config.
 
 ```ts
-// On the server, serialize state and pass to the client:
 state.hydrate({ mobile: false, tablet: false, desktop: true });
 ```
 
@@ -472,9 +490,9 @@ Returns the first value in `map` whose key is `true` in `state`. Priority follow
 import { match } from 'responsive-media';
 import { responsiveState } from 'responsive-media';
 
-const cols   = match(responsiveState.proxy, { mobile: 1, tablet: 2, desktop: 4 });
-const View   = match(responsiveState.proxy, { mobile: MobileMenu, desktop: DesktopNav });
-const label  = match(responsiveState.proxy, { sm: 'Compact', lg: 'Full' }, 'Default');
+const cols  = match(responsiveState.proxy, { mobile: 1, tablet: 2, desktop: 4 });
+const View  = match(responsiveState.proxy, { mobile: MobileMenu, desktop: DesktopNav });
+const label = match(responsiveState.proxy, { sm: 'Compact', lg: 'Full' }, 'Default');
 ```
 
 ### `subscribeMediaQuery(query, callback)` — standalone utility
@@ -508,14 +526,14 @@ Import from `responsive-media/presets` or from the main entry point.
 
 Mutually exclusive Tailwind CSS v3/v4 breakpoints:
 
-| Key   | Range          |
-|-------|----------------|
-| `xs`  | ≤ 639px        |
-| `sm`  | 640 – 767px    |
-| `md`  | 768 – 1023px   |
-| `lg`  | 1024 – 1279px  |
-| `xl`  | 1280 – 1535px  |
-| `2xl` | ≥ 1536px       |
+| Key   | Range         |
+|-------|---------------|
+| `xs`  | ≤ 639px       |
+| `sm`  | 640 – 767px   |
+| `md`  | 768 – 1023px  |
+| `lg`  | 1024 – 1279px |
+| `xl`  | 1280 – 1535px |
+| `2xl` | ≥ 1536px      |
 
 ```ts
 import { createResponsiveState, TailwindPreset, TailwindOrder } from 'responsive-media';
@@ -546,17 +564,17 @@ const state = createResponsiveState(BootstrapPreset, { order: [...BootstrapOrder
 
 User-preference media queries. Multiple keys can be `true` simultaneously.
 
-| Key             | Matches when …                          |
-|-----------------|-----------------------------------------|
-| `dark`          | `prefers-color-scheme: dark`            |
-| `light`         | `prefers-color-scheme: light`           |
-| `reducedMotion` | `prefers-reduced-motion: reduce`        |
-| `highContrast`  | `prefers-contrast: more`                |
-| `lowContrast`   | `prefers-contrast: less`                |
-| `noHover`       | `hover: none` (touch / stylus devices)  |
-| `coarsePointer` | `pointer: coarse` (finger-sized input)  |
-| `forcedColors`  | `forced-colors: active` (Windows HCM)  |
-| `print`         | `print` media type                      |
+| Key             | Matches when …                         |
+|-----------------|----------------------------------------|
+| `dark`          | `prefers-color-scheme: dark`           |
+| `light`         | `prefers-color-scheme: light`          |
+| `reducedMotion` | `prefers-reduced-motion: reduce`       |
+| `highContrast`  | `prefers-contrast: more`               |
+| `lowContrast`   | `prefers-contrast: less`               |
+| `noHover`       | `hover: none` (touch / stylus devices) |
+| `coarsePointer` | `pointer: coarse` (finger-sized input) |
+| `forcedColors`  | `forced-colors: active` (Windows HCM) |
+| `print`         | `print` media type                     |
 
 ```ts
 import { createResponsiveState, AccessibilityPreset } from 'responsive-media';
@@ -572,7 +590,7 @@ a11y.onEnter('print',         () => hideNonPrintable());
 
 ## Vue 3 integration
 
-Import from `responsive-media` (main entry) or `responsive-media` directly — Vue composables are included in the main bundle.
+Vue composables are included in the main bundle and are activated when Vue is installed as a peer dependency.
 
 ### Plugin registration
 
@@ -655,7 +673,7 @@ Tracks an element's dimensions and returns a reactive state object. Sets up and 
 import { useTemplateRef } from 'vue';
 import { useContainerState } from 'responsive-media';
 
-const cardRef  = useTemplateRef('card');
+const cardRef   = useTemplateRef('card');
 const cardState = useContainerState(cardRef, {
   compact: [{ type: 'max-width', value: 300 }],
   wide:    [{ type: 'min-width', value: 600 }],
@@ -791,9 +809,14 @@ const state = useResponsive<AppState>();
 
 ## SSR / hydration
 
-All APIs are SSR-safe — they check for `window` and `matchMedia` availability before use and fall back to `false` on the server.
+All APIs are SSR-safe — they check for `window`, `matchMedia`, and `ResizeObserver` availability before use and fall back to `false` on the server.
 
-For hydration (preventing layout shift):
+| Scenario | Behaviour |
+|---|---|
+| `typeof window === 'undefined'` | All listeners skip setup; `proxy` / `getState()` return `false` for all keys |
+| `useCookie` on server (Nuxt) | Not applicable — use `useCookie` from `@vueuse/core` or Nuxt built-ins |
+| React SSR | `useMediaQuery` returns `false`; `useResponsive` returns the server-side snapshot |
+| Hydration mismatch | Call `hydrate()` with the server snapshot before first render |
 
 ```ts
 // Server: serialize the expected initial state
@@ -806,63 +829,146 @@ responsiveState.hydrate(initialState);
 
 ---
 
+## Architecture
+
+```
+responsive-media
+│
+├── BaseResponsiveState  (abstract)
+│     Proxy over a plain Record<string, boolean>
+│     Batched updates — all matchMedia/ResizeObserver callbacks collected
+│     before a single notify() fires
+│     Subscription registry: global listeners + per-key listeners
+│     Debounce for subscribe(); key listeners never debounced
+│     Ordered breakpoint helpers: current / isAbove / isBelow / between
+│     Utilities: syncCSSVars / emitDOMEvents / toSignal / hydrate / destroy
+│
+├── ReactiveResponsiveState  extends BaseResponsiveState
+│     setupSources()  → window.matchMedia per config key
+│     Generated media query string stored in mediaQueries map
+│     Batches all MediaQueryList 'change' events, then flushes
+│     setConfig() / destroy() cleanupSources() removes matchMedia handlers
+│
+├── ContainerState  extends BaseResponsiveState
+│     setupSources()  → single ResizeObserver on the target element
+│     Evaluates width/height/orientation/aspect-ratio conditions in JS
+│     Reconnects observer when config changes; teardown on destroy()
+│
+├── createResponsiveState(config, options)
+│     Factory — returns a new ReactiveResponsiveState instance
+│
+├── responsiveState  (global singleton)
+│     Pre-configured with default ResponsiveConfig (mobile/tablet/desktop)
+│     setResponsiveConfig() / getResponsiveState() / getResponsiveMediaQueries()
+│     delegate to this instance
+│
+├── toMediaQueryString(conditions)
+│     Converts MediaQueryConfig → CSS string
+│     AND: flat array → joined with ' and '
+│     OR:  nested array → groups joined with ', '
+│     Numeric values get 'px' suffix (except raw / orientation / …)
+│
+├── match(state, map, fallback?)
+│     First-match lookup — returns mapped value for first true key in map
+│
+├── subscribeMediaQuery(query, callback)
+│     Thin wrapper around window.matchMedia + addEventListener('change')
+│     Returns cleanup function
+│
+├── Vue adapter  (vue-responsive.ts)
+│     ResponsivePlugin  — app.use(); calls setResponsiveConfig
+│     useResponsive()   — returns shallowReactive mirror; subscribe() syncs it
+│     useBreakpoints()  — returns { current, isAbove, isBelow, between }
+│                          all methods read from the reactive mirror
+│     useMediaQuery()   — wraps subscribeMediaQuery in a ref + onUnmounted
+│     useContainerState() — watchEffect over templateRef; creates/destroys
+│                           ContainerState; returns shallowReactive mirror
+│
+├── React adapter  (react-responsive.ts)
+│     useResponsive()     — useSyncExternalStore(subscribe, getState, getState)
+│     useBreakpoints()    — useSyncExternalStore + wraps ordered helpers
+│     useMediaQuery()     — useSyncExternalStore over subscribeMediaQuery
+│     useContainerState() — useEffect creates ContainerState; useState mirror
+│
+└── Presets  (presets.ts)
+      ResponsiveConfig     — default mobile/tablet/desktop
+      TailwindPreset / TailwindOrder
+      BootstrapPreset / BootstrapOrder
+      AccessibilityPreset
+```
+
+---
+
+## Bundle size & peer dependencies
+
+| Entry point                 | Peer deps            | Notes |
+|-----------------------------|----------------------|-------|
+| `responsive-media`          | *(none required)*    | Core + Vue composables (tree-shaken when Vue absent) |
+| `responsive-media/react`    | `react ^18`          | React hooks only |
+| `responsive-media/presets`  | *(none)*             | Preset configs only — add to any instance |
+| `responsive-media/container`| *(none)*             | `ContainerState` class + factory only |
+
+The package ships as tree-shakeable ESM and CommonJS. Vue composables (`ResponsivePlugin`, `useResponsive`, etc.) are included in the main bundle but resolve to no-ops when Vue is not installed, so the core footprint stays minimal in non-Vue projects. The React entry point is code-split and never imported by the main bundle.
+
+---
+
 ## Exported API reference
 
 ### Main entry (`responsive-media`)
 
-| Export                    | Type                     | Description                                           |
-|---------------------------|--------------------------|-------------------------------------------------------|
-| `responsiveState`         | `ReactiveResponsiveState`| Global singleton, default `ResponsiveConfig`          |
-| `setResponsiveConfig`     | function                 | Reconfigure the global singleton                      |
-| `getResponsiveState`      | function                 | Get state snapshot from global singleton              |
-| `getResponsiveMediaQueries` | function               | Get CSS query strings from global singleton           |
-| `createResponsiveState`   | function                 | Create an isolated `ReactiveResponsiveState` instance |
-| `createContainerState`    | function                 | Create a `ContainerState` for an element              |
-| `toMediaQueryString`      | function                 | Convert `MediaQueryConfig` to CSS string              |
-| `match`                   | function                 | Pick a value by first matching breakpoint key         |
-| `subscribeMediaQuery`     | function                 | Subscribe to a raw CSS media query string             |
-| `ResponsiveConfig`        | const                    | Default mobile/tablet/desktop breakpoints             |
-| `BaseResponsiveState`     | class                    | Abstract base (for extension)                         |
-| `ReactiveResponsiveState` | class                    | Viewport state (matchMedia-backed)                    |
-| `ContainerState`          | class                    | Element container state (ResizeObserver-backed)       |
-| `ResponsivePlugin`        | Vue plugin               | Vue app plugin                                        |
-| `useResponsive`           | Vue composable           | Reactive state object                                 |
-| `useBreakpoints`          | Vue composable           | Ordered breakpoint helpers                            |
-| `useMediaQuery`           | Vue composable           | Single raw media query                                |
-| `useContainerState`       | Vue composable           | Element container queries                             |
-| `ConfigToState`           | type                     | Derives state type from config                        |
-| `MediaQueryConfig`        | type                     | Config entry type                                     |
-| `MediaQueryCondition`     | type                     | Single condition type                                 |
-| `ResponsiveState`         | type                     | `Record<string, boolean>`                             |
-| `SetConfigOptions`        | type                     | Options for `setConfig` / `createResponsiveState`     |
-| `BreakpointHelpers`       | type                     | Return type of `useBreakpoints`                       |
+| Export                     | Type                      | Description                                            |
+|----------------------------|---------------------------|--------------------------------------------------------|
+| `responsiveState`          | `ReactiveResponsiveState` | Global singleton, default `ResponsiveConfig`           |
+| `setResponsiveConfig`      | function                  | Reconfigure the global singleton                       |
+| `getResponsiveState`       | function                  | Get state snapshot from global singleton               |
+| `getResponsiveMediaQueries`| function                  | Get CSS query strings from global singleton            |
+| `createResponsiveState`    | function                  | Create an isolated `ReactiveResponsiveState` instance  |
+| `createContainerState`     | function                  | Create a `ContainerState` for an element               |
+| `toMediaQueryString`       | function                  | Convert `MediaQueryConfig` to CSS string               |
+| `match`                    | function                  | Pick a value by first matching breakpoint key          |
+| `subscribeMediaQuery`      | function                  | Subscribe to a raw CSS media query string              |
+| `ResponsiveConfig`         | const                     | Default mobile / tablet / desktop breakpoints          |
+| `BaseResponsiveState`      | class                     | Abstract base (for extension)                          |
+| `ReactiveResponsiveState`  | class                     | Viewport state (`matchMedia`-backed)                   |
+| `ContainerState`           | class                     | Element container state (`ResizeObserver`-backed)      |
+| `ResponsivePlugin`         | Vue plugin                | Vue app plugin                                         |
+| `useResponsive`            | Vue composable            | Reactive state object                                  |
+| `useBreakpoints`           | Vue composable            | Ordered breakpoint helpers                             |
+| `useMediaQuery`            | Vue composable            | Single raw media query                                 |
+| `useContainerState`        | Vue composable            | Element container queries                              |
+| `ConfigToState`            | type                      | Derives state type from config                         |
+| `MediaQueryConfig`         | type                      | Config entry type                                      |
+| `MediaQueryCondition`      | type                      | Single condition type                                  |
+| `ResponsiveState`          | type                      | `Record<string, boolean>`                              |
+| `SetConfigOptions`         | type                      | Options for `setConfig` / `createResponsiveState`      |
+| `BreakpointHelpers`        | type                      | Return type of `useBreakpoints`                        |
 
 ### React entry (`responsive-media/react`)
 
-| Export              | Description                                  |
-|---------------------|----------------------------------------------|
-| `useResponsive`     | State hook (useSyncExternalStore)            |
-| `useBreakpoints`    | Ordered breakpoint helpers hook              |
-| `useMediaQuery`     | Single raw media query hook                  |
-| `useContainerState` | Element container queries hook               |
-| `BreakpointHelpers` | Type for `useBreakpoints` return value       |
+| Export              | Description                                   |
+|---------------------|-----------------------------------------------|
+| `useResponsive`     | State hook (`useSyncExternalStore`)           |
+| `useBreakpoints`    | Ordered breakpoint helpers hook               |
+| `useMediaQuery`     | Single raw media query hook                   |
+| `useContainerState` | Element container queries hook                |
+| `BreakpointHelpers` | Type for `useBreakpoints` return value        |
 
 ### Presets entry (`responsive-media/presets`)
 
-| Export               | Description                             |
-|----------------------|-----------------------------------------|
-| `TailwindPreset`     | Tailwind CSS v3/v4 breakpoints          |
-| `TailwindOrder`      | Ordered key array for `TailwindPreset`  |
-| `BootstrapPreset`    | Bootstrap 5 breakpoints                 |
-| `BootstrapOrder`     | Ordered key array for `BootstrapPreset` |
-| `AccessibilityPreset`| User-preference media queries           |
+| Export                | Description                              |
+|-----------------------|------------------------------------------|
+| `TailwindPreset`      | Tailwind CSS v3/v4 breakpoints           |
+| `TailwindOrder`       | Ordered key array for `TailwindPreset`   |
+| `BootstrapPreset`     | Bootstrap 5 breakpoints                  |
+| `BootstrapOrder`      | Ordered key array for `BootstrapPreset`  |
+| `AccessibilityPreset` | User-preference media queries            |
 
 ### Container entry (`responsive-media/container`)
 
-| Export                | Description                                  |
-|-----------------------|----------------------------------------------|
-| `ContainerState`      | Class for element container queries          |
-| `createContainerState`| Factory function                             |
+| Export                 | Description                              |
+|------------------------|------------------------------------------|
+| `ContainerState`       | Class for element container queries      |
+| `createContainerState` | Factory function                         |
 
 ---
 
