@@ -27,7 +27,7 @@ Reactive boolean state from CSS media queries and element dimensions for Vanilla
 - [Utilities](#utilities)
 - [Presets](#presets)
 - [Vue 3 integration](#vue-3-integration)
-- [React 18+ integration](#react-18-integration)
+- [React 19+ integration](#react-19-integration)
 - [TypeScript helpers](#typescript-helpers)
 - [SSR / hydration](#ssr--hydration)
 - [Architecture](#architecture)
@@ -63,7 +63,7 @@ No required peer dependencies. Vue and React adapters are available automaticall
 
 ```bash
 npm install vue@>=3.3     # for Vue composables
-npm install react@>=18    # for React hooks
+npm install react@>=19    # for React hooks
 ```
 
 ---
@@ -691,7 +691,7 @@ const cardState = useContainerState(cardRef, {
 
 ---
 
-## React 18+ integration
+## React 19+ integration
 
 Import from `responsive-media/react`.
 
@@ -904,7 +904,7 @@ responsive-media
 | Entry point                 | Peer deps            | Notes |
 |-----------------------------|----------------------|-------|
 | `responsive-media`          | *(none required)*    | Core + Vue composables (tree-shaken when Vue absent) |
-| `responsive-media/react`    | `react ^18`          | React hooks only |
+| `responsive-media/react`    | `react ^19`          | React hooks only |
 | `responsive-media/presets`  | *(none)*             | Preset configs only — add to any instance |
 | `responsive-media/container`| *(none)*             | `ContainerState` class + factory only |
 
