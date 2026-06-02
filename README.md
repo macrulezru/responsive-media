@@ -9,7 +9,7 @@
   />
 </div>
 
-Reactive boolean state from CSS media queries and element dimensions for Vanilla JS, Vue 3, and React 18+ — AND/OR conditions, container queries, ordered breakpoint helpers, rich subscription API, CSS vars sync, SSR-safe — with no required peer dependencies.
+Reactive boolean state from CSS media queries and element dimensions for Vanilla JS, Vue 3, and React 19+ — AND/OR conditions, container queries, ordered breakpoint helpers, rich subscription API, CSS vars sync, SSR-safe — with no required peer dependencies.
 
 ---
 
@@ -46,7 +46,7 @@ Reactive boolean state from CSS media queries and element dimensions for Vanilla
 - **Ordered breakpoint helpers** — `current`, `isAbove()`, `isBelow()`, `between()` for semantic viewport comparisons; order derived from config key insertion or explicit `order` option
 - **Utilities** — `syncCSSVars` (CSS custom properties), `emitDOMEvents` (DOM CustomEvents), `toSignal` (any signals library — Preact, Angular, SolidJS, Vue), `match` (pick value by first active breakpoint), `subscribeMediaQuery` (raw single query)
 - **Vue 3 adapter** — `useResponsive`, `useBreakpoints`, `useMediaQuery`, `useContainerState`; fully reactive in templates and `computed`; `ResponsivePlugin` for global config
-- **React 18+ adapter** — same four hooks; `useSyncExternalStore` for safe concurrent rendering; SSR-safe (`false` on server)
+- **React 19+ adapter** — same four hooks; `useSyncExternalStore` for safe concurrent rendering; SSR-safe (`false` on server)
 - **Presets** — `TailwindPreset`, `BootstrapPreset`, `AccessibilityPreset` out of the box; user-preference queries (`dark`, `reducedMotion`, `highContrast`, `print`, …)
 - **SSR-safe** — all APIs check for `window` / `matchMedia` / `ResizeObserver` before use; `hydrate()` prevents layout shift on the client
 - **TypeScript** — full generics; `ConfigToState<T>` infers a boolean-state type from any config object
