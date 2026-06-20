@@ -1,7 +1,7 @@
 {
   "name": "responsive-media",
-  "version": "1.2.5",
-  "description": "A utility for reactive state based on CSS media queries. Includes integration with Vue 3 (Composition API) and React 18+.",
+  "version": "1.2.6",
+  "description": "Reactive state from CSS media and container queries — breakpoint helpers, AND/OR conditions and CSS-var sync, SSR-safe. Vanilla JS / Vue 3 / React.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -27,8 +27,13 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build",
@@ -40,20 +45,23 @@
     "type": "git",
     "url": "git+https://github.com/macrulezru/responsive-media.git"
   },
-  "homepage": "https://macrulez.ru/#/en",
+  "homepage": "https://github.com/macrulezru/responsive-media#readme",
   "bugs": {
     "url": "https://github.com/macrulezru/responsive-media/issues"
   },
   "keywords": [
     "responsive",
     "media-query",
-    "typescript",
+    "container-query",
+    "breakpoints",
     "reactive",
-    "utility",
+    "ssr",
     "vue",
-    "react"
+    "vue3",
+    "react",
+    "typescript"
   ],
-  "author": "",
+  "author": "macrulez <macrulezru@gmail.com> (https://macrulez.ru/en)",
   "license": "MIT",
   "devDependencies": {
     "@types/react": "^18.3.0",
