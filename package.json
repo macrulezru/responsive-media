@@ -1,7 +1,10 @@
 {
   "name": "responsive-media",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "Reactive state from CSS media and container queries — breakpoint helpers, AND/OR conditions and CSS-var sync, SSR-safe. Vanilla JS / Vue 3 / React.",
+  "author": "macrulez <macrulezru@gmail.com> (https://macrulez.ru/en)",
+  "homepage": "https://npm.vuecraft.ru/en/packages/responsive-media/",
+  "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -45,7 +48,6 @@
     "type": "git",
     "url": "git+https://github.com/macrulezru/responsive-media.git"
   },
-  "homepage": "https://github.com/macrulezru/responsive-media#readme",
   "bugs": {
     "url": "https://github.com/macrulezru/responsive-media/issues"
   },
@@ -61,8 +63,6 @@
     "react",
     "typescript"
   ],
-  "author": "macrulez <macrulezru@gmail.com> (https://macrulez.ru/en)",
-  "license": "MIT",
   "devDependencies": {
     "@types/react": "^18.3.0",
     "@types/vue": "^1.0.31",
