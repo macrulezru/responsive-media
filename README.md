@@ -1,13 +1,6 @@
-<div align="center" style="background:#111827;border-radius:20px;padding:28px 20px 20px;margin-bottom:32px">
-  <h1 style="color:#f9fafb;margin:0 0 32px;font-size:2.2em;letter-spacing:-0.03em;font-weight:700;font-family:sans-serif">
-    responsive-media
-  </h1>
-  <img
-    src="https://s3.twcstorage.ru/c9a2cc89-780f97fd-311d-4a1a-b86f-c25665c9dc46/images/npm/responsive-media.webp"
-    alt="responsive-media"
-    style="max-width:100%;width:auto;height:300px;border-radius:12px"
-  />
-</div>
+# **Responsive Media**
+
+![Responsive Media](https://github.com/macrulezru/assets/blob/master/packages-images/responsive-media.png?raw=true)
 
 Reactive boolean state from CSS media queries and element dimensions for Vanilla JS, Vue 3, and React 19+ — AND/OR conditions, container queries, ordered breakpoint helpers, rich subscription API, CSS vars sync, SSR-safe — with no required peer dependencies.
 
@@ -982,7 +975,7 @@ MIT
 
 Danil Lisin Vladimirovich aka Macrulez
 
-GitHub: [macrulezru](https://github.com/macrulezru) · Website: [macrulez.ru/en](https://macrulez.ru/en)
+GitHub: [macrulezru](https://github.com/macrulezru) · Website: [npm.vuecraft.ru/en/](https://npm.vuecraft.ru/en/packages/responsive-media/)
 
 Bugs and questions — [issues](https://github.com/macrulezru/responsive-media/issues)
 
