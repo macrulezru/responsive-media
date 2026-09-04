@@ -1,6 +1,6 @@
 {
   "name": "responsive-media",
-  "version": "1.2.7",
+  "version": "1.2.8",
   "description": "Reactive state from CSS media and container queries — breakpoint helpers, AND/OR conditions and CSS-var sync, SSR-safe. Vanilla JS / Vue 3 / React.",
   "author": "macrulez <macrulezru@gmail.com> (https://macrulez.ru/en)",
   "homepage": "https://npm.vuecraft.ru/en/packages/responsive-media/",
