@@ -68,6 +68,185 @@ const stop = responsiveState.subscribe((state) => {
 stop()
 ```
 
+### More examples
+
+#### Vanilla JS
+
+**One pre-configured singleton for the whole app**
+
+`responsiveState` comes pre-configured for mobile/tablet/desktop — `getState()` gives a stable snapshot, `proxy` is live access with no debounce, and `getResponsiveMediaQueries()` returns the same conditions as ready-made CSS strings.
+
+```ts
+import { responsiveState, setResponsiveConfig, getResponsiveMediaQueries } from 'responsive-media'
+
+// Re-configure the singleton
+setResponsiveConfig(
+  {
+    sm: [{ type: 'max-width', value: 767 }],
+    lg: [{ type: 'min-width', value: 1024 }],
+  },
+  {
+    order: ['sm', 'lg'], // for isAbove / isBelow / between
+    debounce: 50, // ms — throttle subscribe() listeners
+  },
+)
+
+// Read a stable snapshot
+const { sm, lg } = responsiveState.getState()
+
+// Live proxy access (never debounced)
+console.log(responsiveState.proxy.sm)
+
+// Get the generated CSS strings
+const mq = getResponsiveMediaQueries()
+// { sm: '(max-width: 767px)', lg: '(min-width: 1024px)' }
+```
+
+**Container queries, no framework required**
+
+`createContainerState` tracks a specific DOM element's size via `ResizeObserver` and toggles classes/CSS variables on its own — the same idea as CSS Container Queries, with support in browsers that don't have them natively.
+
+```ts
+import { createContainerState } from 'responsive-media/container'
+// or: import { createContainerState } from 'responsive-media';
+
+const card = document.querySelector('.card')!
+
+const cardState = createContainerState(
+  card,
+  {
+    compact: [{ type: 'max-width', value: 300 }],
+    normal: [
+      { type: 'min-width', value: 301 },
+      { type: 'max-width', value: 599 },
+    ],
+    wide: [{ type: 'min-width', value: 600 }],
+  },
+  {
+    order: ['compact', 'normal', 'wide'],
+  },
+)
+
+// Reactive class toggling
+cardState.on('compact', (v) => card.classList.toggle('card--compact', v))
+
+// Sync CSS custom properties: --card-compact: 1; --card-wide: 0; …
+cardState.syncCSSVars({ prefix: '--card-' })
+
+// Get @container-compatible query strings
+const strings = cardState.getMediaQueries()
+// { compact: '(max-width: 300px)', wide: '(min-width: 600px)' }
+
+// Cleanup — call once you're done watching this element (e.g. before
+// removing it from the DOM), not right after setup
+// cardState.destroy()
+```
+
+#### Vue
+
+**Ordered breakpoints instead of raw booleans**
+
+`isAbove`/`isBelow`/`between` read the current breakpoint from one shared config — no manual width comparisons, no ad-hoc media queries scattered around.
+
+```ts
+import { useBreakpoints } from 'responsive-media'
+
+const { current, isAbove, isBelow, between } = useBreakpoints()
+
+// current.value        -> 'sm' | 'lg' | null, reactive
+// isAbove('sm')         -> true above the 'sm' breakpoint
+// between('sm', 'lg')   -> true only in the sm–lg range
+```
+
+**Queries against an element, not the viewport**
+
+`useContainerState` tracks a specific element's size via `ResizeObserver` — the same idea as CSS Container Queries, in JS, with support in browsers that don't have them natively.
+
+```ts
+import { useTemplateRef } from 'vue'
+import { useContainerState } from 'responsive-media'
+
+const cardRef = useTemplateRef('card')
+const cardState = useContainerState(cardRef, {
+  compact: [{ type: 'max-width', value: 300 }],
+  wide: [{ type: 'min-width', value: 600 }],
+})
+
+// cardState.compact / cardState.wide — reactive booleans driven by the
+// card element's own size (ResizeObserver), not the viewport — the same
+// idea as CSS Container Queries, in JS.
+```
+
+**Any media feature in one line**
+
+`useMediaQuery` accepts any raw CSS media query — dark mode, hover support, whatever — and cleans up its own listener on unmount.
+
+```ts
+import { useMediaQuery } from 'responsive-media'
+
+const isDark = useMediaQuery('(prefers-color-scheme: dark)')
+const canHover = useMediaQuery('(hover: hover)')
+
+// Both are Ref<boolean> — reactive, and clean up their own listener on
+// unmount. Works with any raw CSS media feature, not just width.
+```
+
+#### React
+
+**The same breakpoints, as a React hook**
+
+`useBreakpoints()` from `responsive-media/react` — the same ordered `isAbove`/`between`, but re-renders drive through `useSyncExternalStore` instead of Vue reactivity.
+
+```tsx
+import { useBreakpoints } from 'responsive-media/react'
+
+function Nav() {
+  const { current, isAbove, isBelow, between } = useBreakpoints()
+  return (
+    <>
+      <span>Current: {current}</span>
+      {isAbove('sm') ? <DesktopNav /> : <MobileNav />}
+      {between('sm', 'lg') && <TabletBanner />}
+    </>
+  )
+}
+```
+
+**Container queries in React**
+
+`useContainerState` sets up and tears down a `ResizeObserver` through `useEffect` — the same API as the Vue version, just for React.
+
+```tsx
+import { useRef } from 'react'
+import { useContainerState } from 'responsive-media/react'
+
+function Card() {
+  const ref = useRef<HTMLDivElement>(null)
+  const { compact, wide } = useContainerState(ref, {
+    compact: [{ type: 'max-width', value: 300 }],
+    wide: [{ type: 'min-width', value: 600 }],
+  })
+
+  return (
+    <div ref={ref}>{compact ? <CompactLayout /> : wide ? <WideLayout /> : <DefaultLayout />}</div>
+  )
+}
+```
+
+**Raw media queries too**
+
+`useMediaQuery` is SSR-safe — it always returns `false` on the server instead of throwing over a missing `window`.
+
+```tsx
+import { useMediaQuery } from 'responsive-media/react'
+
+function ThemeToggle() {
+  const isDark = useMediaQuery('(prefers-color-scheme: dark)')
+  const canHover = useMediaQuery('(hover: hover)')
+  return <button className={isDark ? 'dark' : 'light'}>Toggle</button>
+}
+```
+
 ---
 
 ## Documentation & links
