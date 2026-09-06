@@ -23,6 +23,17 @@ Reactive boolean state from CSS media queries and element dimensions for Vanilla
 
 ---
 
+## When you'd reach for this
+
+A CSS media query decides how the layout looks, but it tells JavaScript nothing — responsive-media turns that same media query into a plain reactive boolean you can read straight from a component's own logic, with no separate resize listener or manual debouncing.
+
+- **A component needs to know the breakpoint, not just CSS** — Mobile shows five cards in a feed, desktop shows a twenty-column table. That's not a styling question — it's a different data set and different render logic, and the component reads the current breakpoint as a plain reactive value to decide what to render.
+- **A widget responds to its container's size, not the screen's** — The same dashboard widget should collapse into a compact view in a narrow sidebar and expand fully in a wide center column. The widget tracks its own container size, not the whole screen, and switches on its own.
+- **A user asked the browser not to show animations** — The system's "reduce motion" setting should actually turn off transitions and parallax on the site — it's exposed as the same kind of reactive value as any other breakpoint, and just as easy to subscribe to.
+- **A page shouldn't flash the wrong layout for a split second** — The server doesn't know the user's real screen size yet — state carries over from server to client safely, so the layout doesn't jump from one version to another right after the page loads.
+
+---
+
 ## Installation
 
 No required peer dependencies — the core (viewport/container state, utilities, presets) works standalone. Vue and React adapters activate automatically once the matching peer package is installed:
