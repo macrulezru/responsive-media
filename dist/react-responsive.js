@@ -89,7 +89,6 @@ export function useContainerState(ref, config, options) {
         const off = cs.subscribe((s) => setState({ ...s }));
         return () => { off(); cs.destroy(); };
         // config / options are treated as static after mount; memoize if needed
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
     return state;
 }
