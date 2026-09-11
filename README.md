@@ -36,12 +36,12 @@ A CSS media query decides how the layout looks, but it tells JavaScript nothing 
 
 ## Installation
 
-No required peer dependencies — the core (viewport/container state, utilities, presets) works standalone. Vue and React adapters activate automatically once the matching peer package is installed:
+No required peer dependencies — the core (viewport/container state, utilities, presets), imported from the package root, works standalone with neither Vue nor React installed. The Vue and React adapters each live at their own subpath, so importing the root never pulls in either framework:
 
 | Environment | Minimum version                    |
 | ----------- | ------------------------------------ |
 | Node.js     | `18+`                                |
-| Vue         | `^3.5.27` (optional)                 |
+| Vue         | `^3.5.27` (optional, for `/vue`)     |
 | React       | `^19.0.0` (optional, for `/react`)   |
 
 ```bash
@@ -160,7 +160,7 @@ const strings = cardState.getMediaQueries()
 `isAbove`/`isBelow`/`between` read the current breakpoint from one shared config — no manual width comparisons, no ad-hoc media queries scattered around.
 
 ```ts
-import { useBreakpoints } from 'responsive-media'
+import { useBreakpoints } from 'responsive-media/vue'
 
 const { current, isAbove, isBelow, between } = useBreakpoints()
 
@@ -175,7 +175,7 @@ const { current, isAbove, isBelow, between } = useBreakpoints()
 
 ```ts
 import { useTemplateRef } from 'vue'
-import { useContainerState } from 'responsive-media'
+import { useContainerState } from 'responsive-media/vue'
 
 const cardRef = useTemplateRef('card')
 const cardState = useContainerState(cardRef, {
@@ -193,7 +193,7 @@ const cardState = useContainerState(cardRef, {
 `useMediaQuery` accepts any raw CSS media query — dark mode, hover support, whatever — and cleans up its own listener on unmount.
 
 ```ts
-import { useMediaQuery } from 'responsive-media'
+import { useMediaQuery } from 'responsive-media/vue'
 
 const isDark = useMediaQuery('(prefers-color-scheme: dark)')
 const canHover = useMediaQuery('(hover: hover)')

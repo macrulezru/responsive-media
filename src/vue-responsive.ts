@@ -1,3 +1,9 @@
+/**
+ * Vue 3 adapter — import from 'responsive-media/vue', not the package root.
+ * Kept as its own entry (mirroring 'responsive-media/react') specifically so this
+ * file's static `@vue/runtime-core` import never reaches a consumer who doesn't
+ * use Vue.
+ */
 import {
   inject,
   reactive,
