@@ -4,5 +4,3 @@ export * from './create-responsive';
 export * from './container-state';
 export * from './media-query';
 export * from './presets';
-export { ResponsivePlugin, useResponsive, useMediaQuery, useBreakpoints, useContainerState } from './vue-responsive';
-export type { BreakpointHelpers } from './vue-responsive';

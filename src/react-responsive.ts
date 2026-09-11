@@ -126,7 +126,6 @@ export function useContainerState(
 
     return () => { off(); cs.destroy(); };
     // config / options are treated as static after mount; memoize if needed
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return state;

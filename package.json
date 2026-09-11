@@ -1,6 +1,6 @@
 {
   "name": "responsive-media",
-  "version": "1.2.10",
+  "version": "2.0.0",
   "description": "Reactive state from CSS media and container queries — breakpoint helpers, AND/OR conditions and CSS-var sync, SSR-safe. Vanilla JS / Vue 3 / React.",
   "author": "macrulez <macrulezru@gmail.com> (https://macrulez.ru/en)",
   "homepage": "https://npm.vuecraft.ru/en/packages/responsive-media/",
@@ -17,6 +17,11 @@
       "types": "./dist/react-responsive.d.ts",
       "import": "./dist/react-responsive.js",
       "require": "./dist/react-responsive.js"
+    },
+    "./vue": {
+      "types": "./dist/vue-responsive.d.ts",
+      "import": "./dist/vue-responsive.js",
+      "require": "./dist/vue-responsive.js"
     },
     "./presets": {
       "types": "./dist/presets.d.ts",
@@ -42,7 +47,9 @@
     "prepublishOnly": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "repository": {
     "type": "git",

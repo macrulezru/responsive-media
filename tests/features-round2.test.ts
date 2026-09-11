@@ -1,14 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createMatchMediaMock } from './matchMedia.mock';
-import {
-  createResponsiveState,
-  toMediaQueryString,
-  match,
-  ReactiveResponsiveState,
-} from '../src/create-responsive';
-import { ContainerState, createContainerState } from '../src/container-state';
+import { createResponsiveState, toMediaQueryString } from '../src/create-responsive';
+import { createContainerState } from '../src/container-state';
 import { TailwindPreset, TailwindOrder, BootstrapPreset, BootstrapOrder, AccessibilityPreset } from '../src/presets';
-import { subscribeMediaQuery } from '../src/media-query';
 import type { MediaQueryConfig } from '../src/create-responsive';
 
 const mock = createMatchMediaMock();
