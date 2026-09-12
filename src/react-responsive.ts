@@ -118,13 +118,34 @@ export function useContainerState(
   const [state, setState] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    let cs: ReturnType<typeof createContainerState> | undefined;
+    let off: (() => void) | undefined;
+    let rafId: number | undefined;
 
-    const cs = createContainerState(el, config, options);
-    const off = cs.subscribe((s) => setState({ ...s }));
+    function trySetup(): void {
+      const el = ref.current;
+      if (!el) {
+        // A plain RefObject has no change notification of its own (unlike
+        // Vue's reactive Ref, which the equivalent watchEffect-based
+        // useContainerState re-runs on automatically) — ref.current can
+        // still become non-null on a later render (an element behind a
+        // conditional render, a portal, a child ref set after this effect's
+        // own commit), so poll for it instead of giving up after the very
+        // first check.
+        rafId = requestAnimationFrame(trySetup);
+        return;
+      }
+      cs = createContainerState(el, config, options);
+      off = cs.subscribe((s) => setState({ ...s }));
+    }
 
-    return () => { off(); cs.destroy(); };
+    trySetup();
+
+    return () => {
+      if (rafId !== undefined) cancelAnimationFrame(rafId);
+      off?.();
+      cs?.destroy();
+    };
     // config / options are treated as static after mount; memoize if needed
   }, []);
 

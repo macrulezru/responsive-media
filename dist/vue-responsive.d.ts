@@ -1,5 +1,6 @@
 import type { App, Ref, ComputedRef } from '@vue/runtime-core';
 import type { MediaQueryConfig, ResponsiveState, SetConfigOptions } from './create-responsive';
+export declare const RESPONSIVE_KEY: unique symbol;
 /**
  * Returns the reactive responsive state.
  * Generic `T` narrows the type for custom configs.
@@ -35,15 +36,27 @@ export interface BreakpointHelpers {
  * // <span>{{ current }}</span>
  */
 export declare function useBreakpoints(): BreakpointHelpers;
+export interface StoppableMediaQueryRef extends Ref<boolean> {
+    /**
+     * Removes the underlying `matchMedia` listener. Called automatically via
+     * `onUnmounted` when there's an active component instance; call this
+     * yourself when using `useMediaQuery()` outside one (a Pinia store, a
+     * plain factory) — there's no unmount hook to rely on there, so `off` was
+     * previously never exposed and the listener leaked for the page's lifetime.
+     */
+    stop: () => void;
+}
 /**
  * Reactive composable for a single raw CSS media query string.
- * Returns a `Ref<boolean>`. Cleans up automatically on `onUnmounted`.
+ * Returns a `Ref<boolean>` (with an additional `.stop()` for manual cleanup
+ * outside a component instance — see `StoppableMediaQueryRef`). Cleans up
+ * automatically on `onUnmounted` when called inside one.
  *
  * @example
  * const isDark   = useMediaQuery('(prefers-color-scheme: dark)');
  * const canHover = useMediaQuery('(hover: hover)');
  */
-export declare function useMediaQuery(query: string): Ref<boolean>;
+export declare function useMediaQuery(query: string): StoppableMediaQueryRef;
 /**
  * Reactive composable that tracks an element's dimensions with `ResizeObserver`
  * and evaluates breakpoint conditions in JavaScript (Container Queries).

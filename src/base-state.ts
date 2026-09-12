@@ -1,5 +1,5 @@
 import type { MediaQueryConfig } from './responsive.enum';
-import { isSSR } from './utils';
+import { hasMatchMedia, isDevMode } from './utils';
 
 export type ResponsiveState = Record<string, boolean>;
 export type ResponsiveListener = (state: ResponsiveState) => void;
@@ -192,7 +192,9 @@ export abstract class BaseResponsiveState {
   isAbove(key: string): boolean {
     const ord = this.effectiveOrder();
     const cur = this.current;
-    return ord.indexOf(cur ?? '') > ord.indexOf(key);
+    const curIdx = ord.indexOf(cur ?? '');
+    const keyIdx = ord.indexOf(key);
+    return curIdx !== -1 && keyIdx !== -1 && curIdx > keyIdx;
   }
 
   /**
@@ -348,7 +350,7 @@ export abstract class BaseResponsiveState {
    * // → --bp-mobile: 1; --bp-desktop: 0; …
    */
   syncCSSVars(options?: SyncCSSVarsOptions): () => void {
-    if (isSSR()) return () => {};
+    if (!hasMatchMedia()) return () => {};
     const el = options?.element ?? document.documentElement;
     const prefix = options?.prefix ?? '--responsive-';
     let prevKeys = new Set<string>();
@@ -367,14 +369,25 @@ export abstract class BaseResponsiveState {
    */
   hydrate(initialState: Record<string, boolean>): void {
     let changed = false;
+    const droppedKeys: string[] = [];
     Object.entries(initialState).forEach(([key, value]) => {
-      if (key in this.state && this.state[key] !== value) {
-        this.state[key] = value;
-        this.notifyKey(key, value);
-        changed = true;
+      if (key in this.state) {
+        if (this.state[key] !== value) {
+          this.state[key] = value;
+          this.notifyKey(key, value);
+          changed = true;
+        }
+      } else if (isDevMode()) {
+        droppedKeys.push(key);
       }
     });
     if (changed) this.flushNotify();
+    if (droppedKeys.length) {
+      console.warn(
+        `[responsive-media] hydrate() ignored unknown key(s) not present in the current config: ${droppedKeys.join(', ')}. ` +
+        'This happens when the server-side snapshot was taken with a different config (e.g. before setConfig() narrowed the active keyset).',
+      );
+    }
   }
 
   /**
@@ -418,7 +431,7 @@ export abstract class BaseResponsiveState {
     target: EventTarget = document,
     options?: EmitDOMEventsOptions,
   ): () => void {
-    if (isSSR()) return () => {};
+    if (!hasMatchMedia()) return () => {};
     const prefix = options?.prefix ?? 'responsive:';
     let prev: Record<string, boolean> = {};
     let initialized = false;

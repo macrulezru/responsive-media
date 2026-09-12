@@ -23,7 +23,11 @@ import { createContainerState } from './container-state';
 // Shared Vue reactive state (singleton per Vue app)
 // ---------------------------------------------------------------------------
 
-const RESPONSIVE_KEY = Symbol('responsiveState');
+// Exported (not just module-private) so a consumer can `provide(RESPONSIVE_KEY, ...)`
+// a custom/mock state themselves — e.g. for testing, or a subtree that should read
+// different breakpoint data than the app-wide default. useResponsive()/
+// useBreakpoints() both honor whatever's found under this key via inject().
+export const RESPONSIVE_KEY = Symbol('responsiveState');
 let vueReactiveState: ResponsiveState | null = null;
 
 function ensureVueState(): ResponsiveState {
@@ -92,18 +96,29 @@ export interface BreakpointHelpers {
  * // <span>{{ current }}</span>
  */
 export function useBreakpoints(): BreakpointHelpers {
-  const state = ensureVueState();
+  // Honors a custom state provided via provide(RESPONSIVE_KEY, ...) — same DI
+  // useResponsive() already supports, which useBreakpoints() used to ignore
+  // entirely (always reading the global default state regardless of what was
+  // injected). The global singleton's own explicit `order` only applies to
+  // the global default state itself — a genuinely different injected state
+  // falls back to its own key insertion order, same as ensureVueState()'s
+  // state does when no explicit order was configured for it either.
+  const injected = inject<ResponsiveState>(
+    RESPONSIVE_KEY as symbol,
+    null as unknown as ResponsiveState,
+  );
+  const usingGlobalState = injected === null;
+  const state = injected ?? ensureVueState();
 
   // Reads from Vue reactive state → Vue tracks these as dependencies
-  function getCurrent(): string | null {
-    const order = responsiveState.getOrder();
-    const keys = order.length ? order : Object.keys(state);
-    return keys.find(k => (state as Record<string, boolean>)[k]) ?? null;
+  function getOrder(): string[] {
+    const order = usingGlobalState ? responsiveState.getOrder() : [];
+    return order.length ? order : Object.keys(state);
   }
 
-  function getOrder(): string[] {
-    const order = responsiveState.getOrder();
-    return order.length ? order : Object.keys(state);
+  function getCurrent(): string | null {
+    const keys = getOrder();
+    return keys.find(k => (state as Record<string, boolean>)[k]) ?? null;
   }
 
   return {
@@ -112,7 +127,9 @@ export function useBreakpoints(): BreakpointHelpers {
     isAbove(key: string): boolean {
       const ord = getOrder();
       const cur = getCurrent();
-      return ord.indexOf(cur ?? '') > ord.indexOf(key);
+      const curIdx = ord.indexOf(cur ?? '');
+      const keyIdx = ord.indexOf(key);
+      return curIdx !== -1 && keyIdx !== -1 && curIdx > keyIdx;
     },
 
     isBelow(key: string): boolean {
@@ -135,17 +152,31 @@ export function useBreakpoints(): BreakpointHelpers {
 // useMediaQuery
 // ---------------------------------------------------------------------------
 
+export interface StoppableMediaQueryRef extends Ref<boolean> {
+  /**
+   * Removes the underlying `matchMedia` listener. Called automatically via
+   * `onUnmounted` when there's an active component instance; call this
+   * yourself when using `useMediaQuery()` outside one (a Pinia store, a
+   * plain factory) — there's no unmount hook to rely on there, so `off` was
+   * previously never exposed and the listener leaked for the page's lifetime.
+   */
+  stop: () => void;
+}
+
 /**
  * Reactive composable for a single raw CSS media query string.
- * Returns a `Ref<boolean>`. Cleans up automatically on `onUnmounted`.
+ * Returns a `Ref<boolean>` (with an additional `.stop()` for manual cleanup
+ * outside a component instance — see `StoppableMediaQueryRef`). Cleans up
+ * automatically on `onUnmounted` when called inside one.
  *
  * @example
  * const isDark   = useMediaQuery('(prefers-color-scheme: dark)');
  * const canHover = useMediaQuery('(hover: hover)');
  */
-export function useMediaQuery(query: string): Ref<boolean> {
-  const matches = ref(false);
+export function useMediaQuery(query: string): StoppableMediaQueryRef {
+  const matches = ref(false) as StoppableMediaQueryRef;
   const off = subscribeMediaQuery(query, (v) => { matches.value = v; });
+  matches.stop = off;
   if (getCurrentInstance()) onUnmounted(off);
   return matches;
 }

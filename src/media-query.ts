@@ -3,9 +3,7 @@
  * Framework-agnostic — Vue and React adapters live in their own files.
  */
 
-function isSSR(): boolean {
-  return typeof window === 'undefined' || typeof window.matchMedia !== 'function';
-}
+import { hasMatchMedia } from './utils';
 
 /**
  * Subscribes to a raw CSS media query string. The callback is called immediately
@@ -23,7 +21,7 @@ export function subscribeMediaQuery(
   query: string,
   callback: (matches: boolean) => void,
 ): () => void {
-  if (isSSR()) {
+  if (!hasMatchMedia()) {
     callback(false);
     return () => {};
   }
