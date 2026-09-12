@@ -1,4 +1,4 @@
-import { isSSR } from './utils';
+import { hasMatchMedia, isDevMode } from './utils';
 // ---------------------------------------------------------------------------
 // Abstract base — shared between ReactiveResponsiveState and ContainerState
 // ---------------------------------------------------------------------------
@@ -133,7 +133,9 @@ export class BaseResponsiveState {
     isAbove(key) {
         const ord = this.effectiveOrder();
         const cur = this.current;
-        return ord.indexOf(cur !== null && cur !== void 0 ? cur : '') > ord.indexOf(key);
+        const curIdx = ord.indexOf(cur !== null && cur !== void 0 ? cur : '');
+        const keyIdx = ord.indexOf(key);
+        return curIdx !== -1 && keyIdx !== -1 && curIdx > keyIdx;
     }
     /**
      * Returns `true` when the current breakpoint comes **before** `key` in the order.
@@ -296,7 +298,7 @@ export class BaseResponsiveState {
      */
     syncCSSVars(options) {
         var _a, _b;
-        if (isSSR())
+        if (!hasMatchMedia())
             return () => { };
         const el = (_a = options === null || options === void 0 ? void 0 : options.element) !== null && _a !== void 0 ? _a : document.documentElement;
         const prefix = (_b = options === null || options === void 0 ? void 0 : options.prefix) !== null && _b !== void 0 ? _b : '--responsive-';
@@ -315,15 +317,25 @@ export class BaseResponsiveState {
      */
     hydrate(initialState) {
         let changed = false;
+        const droppedKeys = [];
         Object.entries(initialState).forEach(([key, value]) => {
-            if (key in this.state && this.state[key] !== value) {
-                this.state[key] = value;
-                this.notifyKey(key, value);
-                changed = true;
+            if (key in this.state) {
+                if (this.state[key] !== value) {
+                    this.state[key] = value;
+                    this.notifyKey(key, value);
+                    changed = true;
+                }
+            }
+            else if (isDevMode()) {
+                droppedKeys.push(key);
             }
         });
         if (changed)
             this.flushNotify();
+        if (droppedKeys.length) {
+            console.warn(`[responsive-media] hydrate() ignored unknown key(s) not present in the current config: ${droppedKeys.join(', ')}. ` +
+                'This happens when the server-side snapshot was taken with a different config (e.g. before setConfig() narrowed the active keyset).');
+        }
     }
     /**
      * Binds a breakpoint key to a writable signal from any signals library
@@ -361,7 +373,7 @@ export class BaseResponsiveState {
      */
     emitDOMEvents(target = document, options) {
         var _a;
-        if (isSSR())
+        if (!hasMatchMedia())
             return () => { };
         const prefix = (_a = options === null || options === void 0 ? void 0 : options.prefix) !== null && _a !== void 0 ? _a : 'responsive:';
         let prev = {};

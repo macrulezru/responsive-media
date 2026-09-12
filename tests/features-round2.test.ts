@@ -116,6 +116,16 @@ describe('isAbove() / isBelow() / between()', () => {
     expect(s.isBelow('md')).toBe(false);
     expect(s.isAbove('md')).toBe(true);
   });
+
+  it('isAbove returns false for an unrecognized key, instead of true for any active breakpoint', () => {
+    // Regression: isAbove() had no bounds guard for an unrecognized key —
+    // ord.indexOf('typo') is -1, and any real index is > -1, so a typo'd
+    // key made isAbove() return true whenever ANY breakpoint was active.
+    // isBelow()/between() already guarded this correctly.
+    mock.setMatch(lgQuery, true);
+    const s = createResponsiveState(threeBreakpoints, { order: ['sm', 'md', 'lg'] });
+    expect(s.isAbove('typo')).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------

@@ -343,10 +343,22 @@ describe('hydrate()', () => {
     expect(listener.mock.calls[0][0].sm).toBe(true);
   });
 
-  it('ignores keys not in current config', () => {
+  it('ignores keys not in current config, and warns about them in dev mode', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const state = makeState();
     state.hydrate({ nonexistent: true } as Record<string, boolean>);
     expect('nonexistent' in state.getState()).toBe(false);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0][0]).toContain('nonexistent');
+    warnSpy.mockRestore();
+  });
+
+  it('does not warn when every hydrated key exists in the current config', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const state = makeState();
+    state.hydrate({ sm: true });
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 
   it('does not notify if no values changed', () => {

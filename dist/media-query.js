@@ -2,9 +2,7 @@
  * Low-level reactive wrapper around a single raw CSS media query string.
  * Framework-agnostic — Vue and React adapters live in their own files.
  */
-function isSSR() {
-    return typeof window === 'undefined' || typeof window.matchMedia !== 'function';
-}
+import { hasMatchMedia } from './utils';
 /**
  * Subscribes to a raw CSS media query string. The callback is called immediately
  * with the current match state and again whenever it changes.
@@ -18,7 +16,7 @@ function isSSR() {
  * off();
  */
 export function subscribeMediaQuery(query, callback) {
-    if (isSSR()) {
+    if (!hasMatchMedia()) {
         callback(false);
         return () => { };
     }
