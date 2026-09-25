@@ -177,7 +177,7 @@ const { current, isAbove, isBelow, between } = useBreakpoints()
 import { useTemplateRef } from 'vue'
 import { useContainerState } from 'responsive-media/vue'
 
-const cardRef = useTemplateRef('card')
+const cardRef = useTemplateRef<HTMLDivElement>('card')
 const cardState = useContainerState(cardRef, {
   compact: [{ type: 'max-width', value: 300 }],
   wide: [{ type: 'min-width', value: 600 }],
