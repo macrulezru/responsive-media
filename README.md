@@ -2,7 +2,7 @@
 
 ![Responsive Media](https://github.com/macrulezru/assets/blob/master/packages-images/responsive-media.png?raw=true)
 
-Reactive boolean state from CSS media queries and element dimensions for Vanilla JS, Vue 3, and React 19+ — AND/OR conditions, container queries, ordered breakpoint helpers, rich subscription API, CSS vars sync, SSR-safe — with no required peer dependencies.
+Reactive boolean state from CSS media queries and element dimensions for Vanilla JS, Vue 3, React 19+ and Nuxt — AND/OR conditions, container queries, ordered breakpoint helpers, rich subscription API, CSS vars sync, SSR-safe, typed from your own config — with no required peer dependencies.
 
 ---
 
@@ -16,9 +16,11 @@ Reactive boolean state from CSS media queries and element dimensions for Vanilla
 - **Ordered breakpoint helpers** — `current`, `isAbove()`, `isBelow()`, `between()` for semantic viewport comparisons; order derived from config key insertion or explicit `order` option
 - **Utilities** — `syncCSSVars` (CSS custom properties), `emitDOMEvents` (DOM CustomEvents), `toSignal` (any signals library — Preact, Angular, SolidJS, Vue), `match` (pick value by first active breakpoint), `subscribeMediaQuery` (raw single query)
 - **Vue 3 adapter** — `useResponsive`, `useBreakpoints`, `useMediaQuery`, `useContainerState`; fully reactive in templates and `computed`; `ResponsivePlugin` for global config
+- **Nuxt module** — `responsive-media/nuxt`: breakpoints in `nuxt.config.ts`, auto-imported composables, an app plugin, and types generated from your breakpoints; `ssrState` gives the server a layout to render
+- **Typed from your config** — `defineResponsive(config)` (Vue and React) returns hooks whose state and breakpoint keys are inferred, so `useResponsive().smallTablet` autocompletes and a typo is a compile error; `useContainerState` infers its keys the same way
 - **React 19+ adapter** — same four hooks; `useSyncExternalStore` for safe concurrent rendering; SSR-safe (`false` on server)
 - **Presets** — `TailwindPreset`, `BootstrapPreset`, `AccessibilityPreset` out of the box; user-preference queries (`dark`, `reducedMotion`, `highContrast`, `print`, …)
-- **SSR-safe** — all APIs check for `window` / `matchMedia` / `ResizeObserver` before use; `hydrate()` prevents layout shift on the client
+- **SSR-safe** — all APIs check for `window` / `matchMedia` / `ResizeObserver` before use; the `ssrState` option sets what the server renders instead of all-`false`, and `hydrate()` prevents layout shift on the client
 - **TypeScript** — full generics; `ConfigToState<T>` infers a boolean-state type from any config object
 
 ---
@@ -43,6 +45,7 @@ No required peer dependencies — the core (viewport/container state, utilities,
 | Node.js     | `18+`                                |
 | Vue         | `^3.5.27` (optional, for `/vue`)     |
 | React       | `^19.0.0` (optional, for `/react`)   |
+| Nuxt        | `^3.9.0 \|\| ^4.0.0` (optional, for `/nuxt`) |
 
 ```bash
 npm install responsive-media
@@ -52,6 +55,8 @@ npm install responsive-media
 npm install vue@^3.5.27     # for Vue composables
 npm install react@^19.0.0   # for React hooks
 ```
+
+For Nuxt there is nothing else to install — register the module (see [Nuxt](#nuxt) below).
 
 ### Quick start
 
@@ -201,6 +206,65 @@ const canHover = useMediaQuery('(hover: hover)')
 // Both are Ref<boolean> — reactive, and clean up their own listener on
 // unmount. Works with any raw CSS media feature, not just width.
 ```
+
+**Hooks typed from your own breakpoints**
+
+`defineResponsive` applies a config and returns hooks whose state and breakpoint keys are inferred from it — no generic to write by hand.
+
+```ts
+import { defineResponsive } from 'responsive-media/vue'
+
+export const { useResponsive, useBreakpoints, plugin } = defineResponsive(
+  {
+    mobile: [{ type: 'max-width', value: 600 }],
+    smallTablet: [{ type: 'max-width', value: 850 }],
+    desktop: [{ type: 'min-width', value: 961 }],
+  },
+  { order: ['mobile', 'smallTablet', 'desktop'] },
+)
+
+// useResponsive().smallTablet  -> boolean
+// useBreakpoints().isAbove('smallTablet')  -> 'nope' is a compile error
+// app.use(plugin)  -> shares the state through provide/inject
+```
+
+`responsive-media/react` has the same `defineResponsive` (without the plugin).
+
+#### Nuxt
+
+Register the module and describe your breakpoints once, in `nuxt.config.ts`. The values must be plain data.
+
+```ts
+export default defineNuxtConfig({
+  modules: ['responsive-media/nuxt'],
+  responsive: {
+    breakpoints: {
+      mobile: [{ type: 'max-width', value: 600 }],
+      smallTablet: [{ type: 'max-width', value: 850 }],
+      desktop: [{ type: 'min-width', value: 961 }],
+    },
+    order: ['mobile', 'smallTablet', 'desktop'],
+    ssrState: { desktop: true },
+  },
+})
+```
+
+`useResponsive`, `useBreakpoints`, `useMediaQuery` and `useContainerState` are auto-imported, and the first two know your breakpoint keys. `ssrState` is what the server renders (the browser's real size is unknown there); without it every key is `false` on the server.
+
+```vue
+<script setup lang="ts">
+const responsive = useResponsive()
+const { current, isAbove } = useBreakpoints()
+</script>
+
+<template>
+  <CompactLayout v-if="responsive.smallTablet" />
+  <WideLayout v-else />
+  <span>{{ current }}</span>
+</template>
+```
+
+If the browser's size differs from `ssrState`, Vue logs a hydration-mismatch warning and re-renders on the client. Choose the layout most visitors get for `ssrState`, or render the viewport-dependent part inside `<ClientOnly>`.
 
 #### React
 

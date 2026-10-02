@@ -18,6 +18,7 @@ import { responsiveState, setResponsiveConfig } from './create-responsive';
 import type { MediaQueryConfig, ResponsiveState, SetConfigOptions } from './create-responsive';
 import { subscribeMediaQuery } from './media-query';
 import { createContainerState } from './container-state';
+import type { ConfigToState } from './responsive.enum';
 
 // ---------------------------------------------------------------------------
 // Shared Vue reactive state (singleton per Vue app)
@@ -69,15 +70,15 @@ export function useResponsive<
 // useBreakpoints
 // ---------------------------------------------------------------------------
 
-export interface BreakpointHelpers {
+export interface BreakpointHelpers<K extends string = string> {
   /** First active breakpoint key, or `null`. Reactive computed. */
-  current: ComputedRef<string | null>;
+  current: ComputedRef<K | null>;
   /** `true` when the current breakpoint is after `key` in the order. Reactive in templates. */
-  isAbove: (key: string) => boolean;
+  isAbove: (key: K) => boolean;
   /** `true` when the current breakpoint is before `key` in the order. Reactive in templates. */
-  isBelow: (key: string) => boolean;
+  isBelow: (key: K) => boolean;
   /** `true` when the current breakpoint is between `from` and `to` (inclusive). Reactive in templates. */
-  between: (from: string, to: string) => boolean;
+  between: (from: K, to: K) => boolean;
 }
 
 /**
@@ -95,7 +96,7 @@ export interface BreakpointHelpers {
  * // <DesktopNav v-if="isAbove('sm')" />
  * // <span>{{ current }}</span>
  */
-export function useBreakpoints(): BreakpointHelpers {
+export function useBreakpoints<K extends string = string>(): BreakpointHelpers<K> {
   // Honors a custom state provided via provide(RESPONSIVE_KEY, ...) — same DI
   // useResponsive() already supports, which useBreakpoints() used to ignore
   // entirely (always reading the global default state regardless of what was
@@ -107,7 +108,7 @@ export function useBreakpoints(): BreakpointHelpers {
     RESPONSIVE_KEY as symbol,
     null as unknown as ResponsiveState,
   );
-  const usingGlobalState = injected === null;
+  const usingGlobalState = injected === null || injected === vueReactiveState;
   const state = injected ?? ensureVueState();
 
   // Reads from Vue reactive state → Vue tracks these as dependencies
@@ -122,7 +123,7 @@ export function useBreakpoints(): BreakpointHelpers {
   }
 
   return {
-    current: computed(getCurrent),
+    current: computed(getCurrent) as ComputedRef<K | null>,
 
     isAbove(key: string): boolean {
       const ord = getOrder();
@@ -208,11 +209,11 @@ export function useMediaQuery(query: string): StoppableMediaQueryRef {
  *   </div>
  * </template>
  */
-export function useContainerState(
+export function useContainerState<C extends Record<string, MediaQueryConfig>>(
   elementRef: Ref<Element | null>,
-  config: Record<string, MediaQueryConfig>,
+  config: C,
   options?: SetConfigOptions,
-): ResponsiveState {
+): ConfigToState<C> {
   const state = reactive<ResponsiveState>({});
 
   watchEffect((cleanup) => {
@@ -232,7 +233,7 @@ export function useContainerState(
     });
   });
 
-  return state;
+  return state as unknown as ConfigToState<C>;
 }
 
 // ---------------------------------------------------------------------------
@@ -254,3 +255,19 @@ export const ResponsivePlugin = {
     app.provide(RESPONSIVE_KEY, ensureVueState());
   },
 };
+
+export function defineResponsive<C extends Record<string, MediaQueryConfig>>(
+  config: C,
+  options?: SetConfigOptions,
+) {
+  setResponsiveConfig(config, options);
+  return {
+    useResponsive: () => useResponsive<ConfigToState<C>>(),
+    useBreakpoints: () => useBreakpoints<Extract<keyof C, string>>(),
+    plugin: {
+      install(app: App) {
+        app.provide(RESPONSIVE_KEY, ensureVueState());
+      },
+    },
+  };
+}

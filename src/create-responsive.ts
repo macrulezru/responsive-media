@@ -51,6 +51,7 @@ export class ReactiveResponsiveState extends BaseResponsiveState {
     super();
     if (options?.debounce !== undefined) this.debounceMs = options.debounce;
     if (options?.order !== undefined) this.order = options.order;
+    if (options?.ssrState !== undefined) this.ssrState = options.ssrState;
     this.applyConfig(config ?? ResponsiveConfig);
   }
 
@@ -60,7 +61,7 @@ export class ReactiveResponsiveState extends BaseResponsiveState {
       this.mediaQueries[key] = mq;
 
       if (!hasMatchMedia()) {
-        this.state[key] = false;
+        this.state[key] = this.ssrState[key] ?? false;
         return;
       }
 
