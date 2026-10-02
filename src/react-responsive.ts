@@ -1,11 +1,16 @@
-import { useSyncExternalStore, useEffect, useRef, useState } from 'react';
+import { useSyncExternalStore, useEffect, useRef, useState, useCallback } from 'react';
 import type { RefObject } from 'react';
-import { responsiveState } from './create-responsive';
+import { responsiveState, match } from './create-responsive';
 import type { MediaQueryConfig, ResponsiveState, SetConfigOptions } from './create-responsive';
 import { subscribeMediaQuery } from './media-query';
 import { createContainerState } from './container-state';
 import type { ConfigToState } from './responsive.enum';
 import { setResponsiveConfig } from './create-responsive';
+import { getUserPreferencesState } from './user-preferences';
+import type { UserPreferences } from './user-preferences';
+import { getViewportSize, subscribeViewportSize } from './viewport-size';
+import type { SubscribeViewportSizeOptions } from './viewport-size';
+import type { ViewportSize } from './size';
 
 // ---------------------------------------------------------------------------
 // useResponsive
@@ -25,7 +30,7 @@ export function useResponsive<
   return useSyncExternalStore(
     (onChange) => responsiveState.subscribe(() => onChange()),
     () => responsiveState.getState<T>(),
-    () => responsiveState.getState<T>(),
+    () => responsiveState.getSsrState<T>(),
   );
 }
 
@@ -154,6 +159,62 @@ export function useContainerState<C extends Record<string, MediaQueryConfig>>(
   return state as ConfigToState<C>;
 }
 
+export function useResponsiveValue<T>(map: Record<string, T>, fallback?: T): T | undefined {
+  const state = useResponsive();
+  return match(state, map, fallback);
+}
+
+function subscribeUserPreferences(onChange: () => void): () => void {
+  return getUserPreferencesState().subscribe(() => onChange());
+}
+
+function getUserPreferencesSnapshot(): UserPreferences {
+  return getUserPreferencesState().getState<Record<string, boolean>>() as unknown as UserPreferences;
+}
+
+function getUserPreferencesServerSnapshot(): UserPreferences {
+  return getUserPreferencesState().getSsrState<Record<string, boolean>>() as unknown as UserPreferences;
+}
+
+export function useUserPreferences(): UserPreferences {
+  return useSyncExternalStore(
+    subscribeUserPreferences,
+    getUserPreferencesSnapshot,
+    getUserPreferencesServerSnapshot,
+  );
+}
+
+const SERVER_VIEWPORT_SIZE: ViewportSize = { width: 0, height: 0 };
+let viewportSnapshot: ViewportSize | null = null;
+
+function getViewportSnapshot(): ViewportSize {
+  if (viewportSnapshot === null) viewportSnapshot = getViewportSize();
+  return viewportSnapshot;
+}
+
+function getServerViewportSnapshot(): ViewportSize {
+  return SERVER_VIEWPORT_SIZE;
+}
+
+export function useViewportSize(options?: SubscribeViewportSizeOptions): ViewportSize {
+  const throttle = options?.throttle;
+  const subscribe = useCallback(
+    (onChange: () => void) =>
+      subscribeViewportSize((size) => {
+        if (
+          viewportSnapshot === null ||
+          viewportSnapshot.width !== size.width ||
+          viewportSnapshot.height !== size.height
+        ) {
+          viewportSnapshot = size;
+          onChange();
+        }
+      }, { throttle }),
+    [throttle],
+  );
+  return useSyncExternalStore(subscribe, getViewportSnapshot, getServerViewportSnapshot);
+}
+
 export function defineResponsive<C extends Record<string, MediaQueryConfig>>(
   config: C,
   options?: SetConfigOptions,
@@ -162,5 +223,7 @@ export function defineResponsive<C extends Record<string, MediaQueryConfig>>(
   return {
     useResponsive: () => useResponsive<ConfigToState<C>>(),
     useBreakpoints: () => useBreakpoints<Extract<keyof C, string>>(),
+    useResponsiveValue: <T>(map: Partial<Record<Extract<keyof C, string>, T>>, fallback?: T) =>
+      useResponsiveValue<T>(map as Record<string, T>, fallback),
   };
 }

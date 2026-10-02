@@ -1,7 +1,7 @@
 {
   "name": "responsive-media",
-  "version": "2.1.0",
-  "description": "Reactive state from CSS media and container queries — breakpoint helpers, AND/OR conditions and CSS-var sync, SSR-safe, typed from your config. Vanilla JS / Vue 3 / React / Nuxt.",
+  "version": "2.2.0",
+  "description": "Reactive state from CSS media and container queries — breakpoint helpers, AND/OR conditions and CSS-var sync, hydration-safe SSR with request hints, typed from your config. Vanilla JS / Vue 3 / React / Nuxt.",
   "author": "macrulez <macrulezru@gmail.com> (https://macrulez.ru/en)",
   "homepage": "https://npm.vuecraft.ru/en/packages/responsive-media/",
   "license": "MIT",
@@ -37,6 +37,11 @@
       "types": "./dist/nuxt/module.d.ts",
       "import": "./dist/nuxt/module.js",
       "require": "./dist/nuxt/module.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "import": "./dist/testing.js",
+      "require": "./dist/testing.js"
     }
   },
   "files": [
@@ -75,7 +80,9 @@
     "react",
     "typescript",
     "nuxt",
-    "nuxt-module"
+    "nuxt-module",
+    "testing",
+    "hydration"
   ],
   "devDependencies": {
     "@nuxt/kit": "^4.5.2",

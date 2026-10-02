@@ -23,7 +23,7 @@ function evaluateSingle(cond: MediaQueryCondition, w: number, h: number): boolea
   }
 }
 
-function evaluateConditions(
+export function evaluateConditions(
   conditions: MediaQueryConfig,
   w: number,
   h: number,

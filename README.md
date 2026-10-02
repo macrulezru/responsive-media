@@ -21,6 +21,10 @@ Reactive boolean state from CSS media queries and element dimensions for Vanilla
 - **React 19+ adapter** — same four hooks; `useSyncExternalStore` for safe concurrent rendering; SSR-safe (`false` on server)
 - **Presets** — `TailwindPreset`, `BootstrapPreset`, `AccessibilityPreset` out of the box; user-preference queries (`dark`, `reducedMotion`, `highContrast`, `print`, …)
 - **SSR-safe** — all APIs check for `window` / `matchMedia` / `ResizeObserver` before use; the `ssrState` option sets what the server renders instead of all-`false`, and `hydrate()` prevents layout shift on the client
+- **Hydration-safe SSR** — deferred hydration (`hydration: 'deferred'`) keeps the server's values while the app mounts and applies the real ones right after, so there is no hydration-mismatch warning; React hydrates from the server snapshot by default; request hints (`cookie`, `user-agent`) let the server render for the visitor's own device
+- **More hooks** — `useResponsiveValue` (a value per breakpoint), `useUserPreferences` (dark mode, reduced motion, …), `useViewportSize` (the window size as numbers), and a reactive query for Vue's `useMediaQuery`
+- **CSS from the same config** — `toScssModule`, `toCustomMedia`, `toTailwindScreens` generate stylesheets from your breakpoints; the Nuxt module can write them for you
+- **Test helpers** — `responsive-media/testing` is a controllable `matchMedia` for Vitest and Jest
 - **TypeScript** — full generics; `ConfigToState<T>` infers a boolean-state type from any config object
 
 ---
@@ -245,11 +249,20 @@ export default defineNuxtConfig({
     },
     order: ['mobile', 'smallTablet', 'desktop'],
     ssrState: { desktop: true },
+    ssrHints: ['cookie', 'user-agent'],
+    css: { scss: true },
   },
 })
 ```
 
-`useResponsive`, `useBreakpoints`, `useMediaQuery` and `useContainerState` are auto-imported, and the first two know your breakpoint keys. `ssrState` is what the server renders (the browser's real size is unknown there); without it every key is `false` on the server.
+`useResponsive`, `useBreakpoints`, `useResponsiveValue`, `useMediaQuery`, `useContainerState`, `useUserPreferences` and `useViewportSize` are auto-imported, and the first three know your breakpoint keys. The `responsive` key is typed, so the editor completes and checks it.
+
+- **`ssrState`** is what the server renders (the browser's real size is unknown there); without it every key is `false` on the server.
+- **`hydration`** — `'deferred'` by default: the browser hydrates with the server's values and switches to its real ones right after mounting, so Vue logs no hydration warning. `'immediate'` uses the real state at once.
+- **`ssrHints`** — `'cookie'` (the browser writes its window size to a cookie, the server reads it on the next request) and `'user-agent'` (mobile / tablet / desktop). The server then renders for the visitor's own device. The HTML depends on `Cookie` and `User-Agent`, so a CDN that caches pages must vary on them.
+- **`ssrDevices`**, **`cookie`** — the sizes a user agent is rendered for, and the cookie name.
+- **`devBadge`** — a corner badge with the current breakpoint, in development only.
+- **`css`** — `{ scss: true }` writes `.nuxt/responsive-media/queries.scss`: `@use '#build/responsive-media/queries' as r; @include r.media(mobile) { … }`. `{ customMedia: true }` writes a `@custom-media` file.
 
 ```vue
 <script setup lang="ts">
@@ -264,7 +277,47 @@ const { current, isAbove } = useBreakpoints()
 </template>
 ```
 
-If the browser's size differs from `ssrState`, Vue logs a hydration-mismatch warning and re-renders on the client. Choose the layout most visitors get for `ssrState`, or render the viewport-dependent part inside `<ClientOnly>`.
+With the default deferred hydration there is no warning when the browser's size differs from `ssrState`: the page renders the server's layout first and the real one a tick later. Choose the layout most visitors get for `ssrState`, add `ssrHints` so the server renders for the visitor's own device, and render what has no server value — `useMediaQuery()` and container state — inside `<ClientOnly>`.
+
+**More hooks**
+
+```ts
+import { useResponsiveValue, useUserPreferences, useViewportSize, useMediaQuery } from 'responsive-media/vue'
+
+const columns = useResponsiveValue({ mobile: 1, tablet: 2, desktop: 4 }) // ComputedRef<number | undefined>
+const prefs = useUserPreferences() // prefs.dark, prefs.reducedMotion, …
+const size = useViewportSize({ throttle: 200 }) // size.width, size.height
+const wide = useMediaQuery(() => `(min-width: ${breakpoint.value}px)`) // a ref or a getter re-subscribes
+```
+
+`responsive-media/react` has `useResponsiveValue`, `useUserPreferences` and `useViewportSize` too.
+
+#### Other frameworks
+
+The state object follows the store contract (`subscribe` calls the listener at once and returns an unsubscribe function): `$responsiveState` in Svelte, `from(responsiveState)` in Solid, an RxJS `Observable` for Angular.
+
+#### CSS and tests
+
+```ts
+import { toScssModule, toCustomMedia, toTailwindScreens } from 'responsive-media'
+
+toScssModule(breakpoints) // a map + `@mixin media($key)`
+toCustomMedia(breakpoints) // @custom-media --mobile (max-width: 600px);
+toTailwindScreens(breakpoints) // { mobile: { raw: '(max-width: 600px)' } }
+```
+
+```ts
+import { createViewportMock } from 'responsive-media/testing'
+
+const viewport = createViewportMock()
+beforeEach(() => viewport.install())
+afterEach(() => viewport.uninstall())
+
+it('goes mobile', () => {
+  viewport.setViewport({ width: 500 })
+  viewport.setFeature('prefers-color-scheme', 'dark')
+})
+```
 
 #### React
 

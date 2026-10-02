@@ -4,6 +4,11 @@ export * from './create-responsive';
 export * from './container-state';
 export * from './media-query';
 export * from './presets';
+export * from './size';
+export * from './ssr-hints';
+export * from './viewport-size';
+export * from './css';
+export * from './user-preferences';
 
 // Vue composables (ResponsivePlugin, useResponsive, useBreakpoints, useMediaQuery,
 // useContainerState) live at 'responsive-media/vue', NOT here — this entry stays
