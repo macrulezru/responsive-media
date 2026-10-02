@@ -4,6 +4,8 @@ import { responsiveState } from './create-responsive';
 import type { MediaQueryConfig, ResponsiveState, SetConfigOptions } from './create-responsive';
 import { subscribeMediaQuery } from './media-query';
 import { createContainerState } from './container-state';
+import type { ConfigToState } from './responsive.enum';
+import { setResponsiveConfig } from './create-responsive';
 
 // ---------------------------------------------------------------------------
 // useResponsive
@@ -31,15 +33,15 @@ export function useResponsive<
 // useBreakpoints
 // ---------------------------------------------------------------------------
 
-export interface BreakpointHelpers {
+export interface BreakpointHelpers<K extends string = string> {
   /** First active breakpoint key, or `null`. */
-  current: string | null;
+  current: K | null;
   /** `true` when the current breakpoint is after `key` in the order. */
-  isAbove: (key: string) => boolean;
+  isAbove: (key: K) => boolean;
   /** `true` when the current breakpoint is before `key` in the order. */
-  isBelow: (key: string) => boolean;
+  isBelow: (key: K) => boolean;
   /** `true` when the current breakpoint is between `from` and `to` (inclusive). */
-  between: (from: string, to: string) => boolean;
+  between: (from: K, to: K) => boolean;
 }
 
 /**
@@ -53,12 +55,12 @@ export interface BreakpointHelpers {
  * const { current, isAbove, isBelow, between } = useBreakpoints();
  * return isAbove('sm') ? <DesktopNav /> : <MobileNav />;
  */
-export function useBreakpoints(): BreakpointHelpers {
+export function useBreakpoints<K extends string = string>(): BreakpointHelpers<K> {
   // Subscribe to state so the component re-renders on changes
   useResponsive();
 
   return {
-    current: responsiveState.current,
+    current: responsiveState.current as K | null,
     isAbove: (key) => responsiveState.isAbove(key),
     isBelow: (key) => responsiveState.isBelow(key),
     between: (from, to) => responsiveState.between(from, to),
@@ -110,11 +112,11 @@ export function useMediaQuery(query: string): boolean {
  *   );
  * }
  */
-export function useContainerState(
+export function useContainerState<C extends Record<string, MediaQueryConfig>>(
   ref: RefObject<Element | null>,
-  config: Record<string, MediaQueryConfig>,
+  config: C,
   options?: SetConfigOptions,
-): Record<string, boolean> {
+): ConfigToState<C> {
   const [state, setState] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -149,5 +151,16 @@ export function useContainerState(
     // config / options are treated as static after mount; memoize if needed
   }, []);
 
-  return state;
+  return state as ConfigToState<C>;
+}
+
+export function defineResponsive<C extends Record<string, MediaQueryConfig>>(
+  config: C,
+  options?: SetConfigOptions,
+) {
+  setResponsiveConfig(config, options);
+  return {
+    useResponsive: () => useResponsive<ConfigToState<C>>(),
+    useBreakpoints: () => useBreakpoints<Extract<keyof C, string>>(),
+  };
 }

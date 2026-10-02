@@ -17,6 +17,7 @@ export interface SetConfigOptions {
    * @example ['xs', 'sm', 'md', 'lg', 'xl', '2xl']
    */
   order?: string[];
+  ssrState?: Record<string, boolean>;
 }
 
 export interface SyncCSSVarsOptions {
@@ -52,6 +53,7 @@ export abstract class BaseResponsiveState {
   protected debounceMs = 0;
   protected debounceTimer: ReturnType<typeof setTimeout> | null = null;
   protected order: string[] = [];
+  protected ssrState: Record<string, boolean> = {};
 
   constructor() {
     this.proxy = new Proxy(this.state, {
@@ -224,6 +226,7 @@ export abstract class BaseResponsiveState {
   setConfig(config: Record<string, MediaQueryConfig>, options?: SetConfigOptions): void {
     if (options?.debounce !== undefined) this.debounceMs = options.debounce;
     if (options?.order !== undefined) this.order = options.order;
+    if (options?.ssrState !== undefined) this.ssrState = options.ssrState;
     this.applyConfig(config);
   }
 

@@ -56,6 +56,7 @@ export class ContainerState extends BaseResponsiveState {
     this.element = element;
     if (options?.debounce !== undefined) this.debounceMs = options.debounce;
     if (options?.order !== undefined) this.order = options.order;
+    if (options?.ssrState !== undefined) this.ssrState = options.ssrState;
     this.applyConfig(config);
   }
 
@@ -69,7 +70,7 @@ export class ContainerState extends BaseResponsiveState {
 
     if (!hasResizeObserver()) {
       // SSR or unsupported — default to false
-      Object.keys(config).forEach(key => { this.state[key] = false; });
+      Object.keys(config).forEach(key => { this.state[key] = this.ssrState[key] ?? false; });
       return;
     }
 
