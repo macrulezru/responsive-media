@@ -1,11 +1,12 @@
 import { useSyncExternalStore, useEffect, useRef, useState, useCallback } from 'react';
 import type { RefObject } from 'react';
-import { responsiveState, match } from './create-responsive';
-import type { MediaQueryConfig, ResponsiveState, SetConfigOptions } from './create-responsive';
+import { responsiveState } from './global-state';
+import { match } from './viewport-state';
+import type { MediaQueryConfig, ResponsiveState, SetConfigOptions } from './viewport-state';
 import { subscribeMediaQuery } from './media-query';
 import { createContainerState } from './container-state';
 import type { ConfigToState } from './responsive.enum';
-import { setResponsiveConfig } from './create-responsive';
+import { setResponsiveConfig } from './global-state';
 import { getUserPreferencesState } from './user-preferences';
 import type { UserPreferences } from './user-preferences';
 import { getViewportSize, subscribeViewportSize } from './viewport-size';

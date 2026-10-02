@@ -1,6 +1,6 @@
 import type { MediaQueryConfig, MediaQueryCondition } from './responsive.enum';
 import { BaseResponsiveState, type SetConfigOptions } from './base-state';
-import { buildMediaQuery } from './create-responsive';
+import { buildMediaQuery } from './viewport-state';
 import { hasResizeObserver } from './utils';
 
 // ---------------------------------------------------------------------------

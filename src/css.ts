@@ -1,5 +1,5 @@
 import type { MediaQueryConfig } from './responsive.enum';
-import { buildMediaQuery } from './create-responsive';
+import { buildMediaQuery } from './viewport-state';
 
 export function toMediaQueries(config: Record<string, MediaQueryConfig>): Record<string, string> {
   return Object.keys(config).reduce<Record<string, string>>((acc, key) => {
