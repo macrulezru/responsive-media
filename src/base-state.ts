@@ -54,6 +54,7 @@ export abstract class BaseResponsiveState {
   protected debounceTimer: ReturnType<typeof setTimeout> | null = null;
   protected order: string[] = [];
   protected ssrState: Record<string, boolean> = {};
+  protected ssrSnapshot: ResponsiveState = {};
 
   constructor() {
     this.proxy = new Proxy(this.state, {
@@ -102,6 +103,10 @@ export abstract class BaseResponsiveState {
     this.batching = false;
     this.pendingKeyChanges.forEach((v, k) => this.notifyKey(k, v));
     this.pendingKeyChanges.clear();
+    this.ssrSnapshot = Object.keys(this.state).reduce<ResponsiveState>((acc, key) => {
+      acc[key] = this.ssrState[key] ?? false;
+      return acc;
+    }, {});
     this.flushNotify();
   }
 
@@ -148,6 +153,10 @@ export abstract class BaseResponsiveState {
    */
   getState<T extends Record<string, boolean> = ResponsiveState>(): T {
     return this.snapshot as unknown as T;
+  }
+
+  getSsrState<T extends Record<string, boolean> = ResponsiveState>(): T {
+    return this.ssrSnapshot as unknown as T;
   }
 
   /** Returns the CSS media query strings for each breakpoint key. */

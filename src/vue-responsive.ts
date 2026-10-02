@@ -9,16 +9,30 @@ import {
   reactive,
   ref,
   computed,
+  watch,
   watchEffect,
+  nextTick,
+  toValue,
   onUnmounted,
   getCurrentInstance,
 } from '@vue/runtime-core';
-import type { App, Ref, ComputedRef } from '@vue/runtime-core';
-import { responsiveState, setResponsiveConfig } from './create-responsive';
-import type { MediaQueryConfig, ResponsiveState, SetConfigOptions } from './create-responsive';
+import type { App, Ref, ComputedRef, MaybeRefOrGetter } from '@vue/runtime-core';
+import { responsiveState, setResponsiveConfig, createResponsiveState, match } from './create-responsive';
+import type {
+  MediaQueryConfig,
+  ResponsiveState,
+  SetConfigOptions,
+  ReactiveResponsiveState,
+} from './create-responsive';
 import { subscribeMediaQuery } from './media-query';
 import { createContainerState } from './container-state';
 import type { ConfigToState } from './responsive.enum';
+import { hasMatchMedia } from './utils';
+import { getUserPreferencesState } from './user-preferences';
+import type { UserPreferences } from './user-preferences';
+import { subscribeViewportSize } from './viewport-size';
+import type { SubscribeViewportSizeOptions } from './viewport-size';
+import type { ViewportSize } from './size';
 
 // ---------------------------------------------------------------------------
 // Shared Vue reactive state (singleton per Vue app)
@@ -31,19 +45,49 @@ import type { ConfigToState } from './responsive.enum';
 export const RESPONSIVE_KEY = Symbol('responsiveState');
 let vueReactiveState: ResponsiveState | null = null;
 
+const sourceByMirror = new WeakMap<object, ReactiveResponsiveState>();
+
+interface AppMirror {
+  state: ResponsiveState;
+  freeze: (seed: ResponsiveState) => void;
+  commit: () => void;
+  stop: () => void;
+}
+
+function createAppMirror(source: ReactiveResponsiveState): AppMirror {
+  const state = reactive<ResponsiveState>({ ...source.getState() });
+  sourceByMirror.set(state, source);
+  let frozen = false;
+
+  const sync = (next: ResponsiveState) => {
+    if (frozen) return;
+    Object.keys(state).forEach(key => {
+      if (!(key in next)) delete state[key];
+    });
+    Object.assign(state, next);
+  };
+
+  const stop = source.subscribe(sync);
+
+  return {
+    state,
+    freeze(seed) {
+      frozen = true;
+      Object.keys(state).forEach(key => delete state[key]);
+      Object.assign(state, seed);
+    },
+    commit() {
+      frozen = false;
+      sync(source.getState());
+    },
+    stop,
+  };
+}
+
 function ensureVueState(): ResponsiveState {
   if (vueReactiveState) return vueReactiveState;
-
-  vueReactiveState = reactive<ResponsiveState>({ ...responsiveState.getState() });
-
-  responsiveState.subscribe((state) => {
-    Object.keys(vueReactiveState!).forEach(key => {
-      if (!(key in state)) delete (vueReactiveState as ResponsiveState)[key];
-    });
-    Object.assign(vueReactiveState!, state);
-  });
-
-  return vueReactiveState!;
+  vueReactiveState = createAppMirror(responsiveState).state;
+  return vueReactiveState;
 }
 
 // ---------------------------------------------------------------------------
@@ -108,12 +152,12 @@ export function useBreakpoints<K extends string = string>(): BreakpointHelpers<K
     RESPONSIVE_KEY as symbol,
     null as unknown as ResponsiveState,
   );
-  const usingGlobalState = injected === null || injected === vueReactiveState;
   const state = injected ?? ensureVueState();
+  const source = sourceByMirror.get(state);
 
   // Reads from Vue reactive state → Vue tracks these as dependencies
   function getOrder(): string[] {
-    const order = usingGlobalState ? responsiveState.getOrder() : [];
+    const order = source ? source.getOrder() : [];
     return order.length ? order : Object.keys(state);
   }
 
@@ -174,11 +218,25 @@ export interface StoppableMediaQueryRef extends Ref<boolean> {
  * const isDark   = useMediaQuery('(prefers-color-scheme: dark)');
  * const canHover = useMediaQuery('(hover: hover)');
  */
-export function useMediaQuery(query: string): StoppableMediaQueryRef {
+export function useMediaQuery(query: MaybeRefOrGetter<string>): StoppableMediaQueryRef {
   const matches = ref(false) as StoppableMediaQueryRef;
-  const off = subscribeMediaQuery(query, (v) => { matches.value = v; });
-  matches.stop = off;
-  if (getCurrentInstance()) onUnmounted(off);
+  let off: () => void = () => {};
+
+  const stopWatch = watch(
+    () => toValue(query),
+    (next) => {
+      off();
+      off = subscribeMediaQuery(next, (v) => { matches.value = v; });
+    },
+    { immediate: true },
+  );
+
+  matches.stop = () => {
+    stopWatch();
+    off();
+    off = () => {};
+  };
+  if (getCurrentInstance()) onUnmounted(matches.stop);
   return matches;
 }
 
@@ -256,17 +314,91 @@ export const ResponsivePlugin = {
   },
 };
 
+export type HydrationMode = 'immediate' | 'deferred';
+
+export interface DefineResponsiveOptions extends SetConfigOptions {
+  hydration?: HydrationMode;
+}
+
+export interface ResponsivePluginOptions {
+  ssrState?: Record<string, boolean>;
+  hydration?: HydrationMode;
+  hydrating?: boolean;
+}
+
+function wrapMount(app: App, mirror: AppMirror, seed: ResponsiveState, hydrating: boolean | undefined): void {
+  const original = app.mount;
+  app.mount = ((container: string | Element, ...rest: unknown[]) => {
+    const element = typeof container === 'string' ? document.querySelector(container) : container;
+    const isHydrating = hydrating ?? (element instanceof Element && element.hasChildNodes());
+    if (isHydrating) mirror.freeze(seed);
+    const result = (original as (...args: unknown[]) => unknown).call(app, container, ...rest);
+    if (isHydrating) nextTick(() => mirror.commit());
+    return result;
+  }) as typeof app.mount;
+}
+
+export function useResponsiveValue<T>(map: Record<string, T>, fallback?: T): ComputedRef<T | undefined> {
+  const state = useResponsive();
+  return computed(() => match(state, map, fallback));
+}
+
+let preferencesMirror: UserPreferences | null = null;
+
+export function useUserPreferences(): UserPreferences {
+  if (preferencesMirror === null) {
+    preferencesMirror = createAppMirror(getUserPreferencesState()).state as unknown as UserPreferences;
+  }
+  return preferencesMirror;
+}
+
+export interface StoppableViewportSize extends ViewportSize {
+  stop: () => void;
+}
+
+export function useViewportSize(options?: SubscribeViewportSizeOptions): StoppableViewportSize {
+  const size = reactive({ width: 0, height: 0, stop: () => {} });
+  const off = subscribeViewportSize((next) => {
+    size.width = next.width;
+    size.height = next.height;
+  }, options);
+  size.stop = off;
+  if (getCurrentInstance()) onUnmounted(off);
+  return size;
+}
+
 export function defineResponsive<C extends Record<string, MediaQueryConfig>>(
   config: C,
-  options?: SetConfigOptions,
+  options?: DefineResponsiveOptions,
 ) {
-  setResponsiveConfig(config, options);
+  const { hydration, ...settings } = options ?? {};
+  setResponsiveConfig(config, settings);
   return {
     useResponsive: () => useResponsive<ConfigToState<C>>(),
     useBreakpoints: () => useBreakpoints<Extract<keyof C, string>>(),
+    useResponsiveValue: <T>(map: Partial<Record<Extract<keyof C, string>, T>>, fallback?: T) =>
+      useResponsiveValue<T>(map as Record<string, T>, fallback),
     plugin: {
-      install(app: App) {
-        app.provide(RESPONSIVE_KEY, ensureVueState());
+      install(app: App, installOptions: ResponsivePluginOptions = {}) {
+        const mode = installOptions.hydration ?? hydration ?? 'immediate';
+        const ssrState = installOptions.ssrState ?? settings.ssrState;
+
+        if (!hasMatchMedia()) {
+          const source = createResponsiveState(config, { ...settings, ssrState });
+          const mirror = createAppMirror(source);
+          app.provide(RESPONSIVE_KEY, mirror.state);
+          app.onUnmount(() => {
+            mirror.stop();
+            source.destroy();
+          });
+          return;
+        }
+
+        const mirror = createAppMirror(responsiveState);
+        app.provide(RESPONSIVE_KEY, mirror.state);
+        if (mode === 'deferred') {
+          wrapMount(app, mirror, { ...responsiveState.getSsrState(), ...installOptions.ssrState }, installOptions.hydrating);
+        }
       },
     },
   };
