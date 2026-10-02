@@ -1,6 +1,6 @@
 {
   "name": "responsive-media",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Reactive state from CSS media and container queries — breakpoint helpers, AND/OR conditions and CSS-var sync, hydration-safe SSR with request hints, typed from your config. Vanilla JS / Vue 3 / React / Nuxt.",
   "author": "macrulez <macrulezru@gmail.com> (https://macrulez.ru/en)",
   "homepage": "https://npm.vuecraft.ru/en/packages/responsive-media/",

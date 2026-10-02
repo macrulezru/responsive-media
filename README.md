@@ -21,7 +21,7 @@ Reactive boolean state from CSS media queries and element dimensions for Vanilla
 - **React 19+ adapter** — same four hooks; `useSyncExternalStore` for safe concurrent rendering; SSR-safe (`false` on server)
 - **Presets** — `TailwindPreset`, `BootstrapPreset`, `AccessibilityPreset` out of the box; user-preference queries (`dark`, `reducedMotion`, `highContrast`, `print`, …)
 - **SSR-safe** — all APIs check for `window` / `matchMedia` / `ResizeObserver` before use; the `ssrState` option sets what the server renders instead of all-`false`, and `hydrate()` prevents layout shift on the client
-- **Hydration-safe SSR** — deferred hydration (`hydration: 'deferred'`) keeps the server's values while the app mounts and applies the real ones right after, so there is no hydration-mismatch warning; React hydrates from the server snapshot by default; request hints (`cookie`, `user-agent`) let the server render for the visitor's own device
+- **Hydration-safe SSR** — deferred hydration (`hydration: 'deferred'`) keeps the server's values until the page has finished hydrating (async components included) and then applies the real ones, so there is no hydration-mismatch warning; React hydrates from the server snapshot by default; request hints (`cookie`, `user-agent`) let the server render for the visitor's own device
 - **More hooks** — `useResponsiveValue` (a value per breakpoint), `useUserPreferences` (dark mode, reduced motion, …), `useViewportSize` (the window size as numbers), and a reactive query for Vue's `useMediaQuery`
 - **CSS from the same config** — `toScssModule`, `toCustomMedia`, `toTailwindScreens` generate stylesheets from your breakpoints; the Nuxt module can write them for you
 - **Test helpers** — `responsive-media/testing` is a controllable `matchMedia` for Vitest and Jest
@@ -258,7 +258,7 @@ export default defineNuxtConfig({
 `useResponsive`, `useBreakpoints`, `useResponsiveValue`, `useMediaQuery`, `useContainerState`, `useUserPreferences` and `useViewportSize` are auto-imported, and the first three know your breakpoint keys. The `responsive` key is typed, so the editor completes and checks it.
 
 - **`ssrState`** is what the server renders (the browser's real size is unknown there); without it every key is `false` on the server.
-- **`hydration`** — `'deferred'` by default: the browser hydrates with the server's values and switches to its real ones right after mounting, so Vue logs no hydration warning. `'immediate'` uses the real state at once.
+- **`hydration`** — `'deferred'` by default: the browser hydrates with the server's values and switches to its real ones once the page has finished hydrating, so Vue logs no hydration warning. `'immediate'` uses the real state at once.
 - **`ssrHints`** — `'cookie'` (the browser writes its window size to a cookie, the server reads it on the next request) and `'user-agent'` (mobile / tablet / desktop). The server then renders for the visitor's own device. The HTML depends on `Cookie` and `User-Agent`, so a CDN that caches pages must vary on them.
 - **`ssrDevices`**, **`cookie`** — the sizes a user agent is rendered for, and the cookie name.
 - **`devBadge`** — a corner badge with the current breakpoint, in development only.

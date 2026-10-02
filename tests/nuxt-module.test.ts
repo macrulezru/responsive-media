@@ -55,7 +55,7 @@ describe('responsive-media/nuxt module', () => {
     expect(composables.filename).toBe('responsive-media/index.ts');
     expect(contents).toContain("import { defineResponsive } from 'responsive-media/vue';");
     expect(contents).toContain(
-      'export const { useResponsive, useBreakpoints, useResponsiveValue, plugin } = defineResponsive(',
+      'export const { useResponsive, useBreakpoints, useResponsiveValue, commitHydration, plugin } = defineResponsive(',
     );
     expect(contents).toContain('"mobile"');
     expect(contents).toContain('"tablet"');
@@ -89,9 +89,9 @@ describe('responsive-media/nuxt module', () => {
     });
     const body = contents
       .replace(/^import .*$/m, '')
-      .replace('export const { useResponsive, useBreakpoints, useResponsiveValue, plugin } =', 'const hooks =');
+      .replace('export const { useResponsive, useBreakpoints, useResponsiveValue, commitHydration, plugin } =', 'const hooks =');
     const hooks = new Function('defineResponsive', `${body}\nreturn hooks;`)(defineResponsive);
-    expect(Object.keys(hooks).sort()).toEqual(['plugin', 'useBreakpoints', 'useResponsive', 'useResponsiveValue']);
+    expect(Object.keys(hooks).sort()).toEqual(['commitHydration', 'plugin', 'useBreakpoints', 'useResponsive', 'useResponsiveValue']);
     const { responsiveState } = await import('../src/create-responsive');
     expect(responsiveState.getState()).toEqual({ smallTablet: true, desktop: false });
     mock.uninstall();
@@ -120,8 +120,10 @@ describe('generated plugin', () => {
   it('installs the plugin object with the server snapshot and the hydration flag', async () => {
     const { pluginContents } = await runModule();
     expect(pluginContents).toContain("import { defineNuxtPlugin, useCookie, useRequestHeaders } from '#imports';");
-    expect(pluginContents).toContain(`import { plugin } from ${JSON.stringify(DST)};`);
-    expect(pluginContents).toContain('nuxtApp.vueApp.use(plugin, { ssrState, hydrating:');
+    expect(pluginContents).toContain(`import { plugin, commitHydration } from ${JSON.stringify(DST)};`);
+    expect(pluginContents).toContain('nuxtApp.vueApp.use(plugin, {');
+    expect(pluginContents).toContain("commit: 'manual',");
+    expect(pluginContents).toContain("nuxtApp.hook('app:suspense:resolve', () => commitHydration());");
     expect(pluginContents).toContain('nuxtApp.isHydrating');
   });
 
@@ -158,6 +160,7 @@ describe('generated plugin', () => {
     const resolveSsrState = vi.fn(() => ({ mobile: true, desktop: false }));
     const serializeViewportCookie = vi.fn(() => '500x800');
     const use = vi.fn();
+    const commitHydration = vi.fn();
     const hooks: Record<string, () => void> = {};
     const nuxtApp = {
       payload: {} as Record<string, unknown>,
@@ -186,6 +189,7 @@ describe('generated plugin', () => {
         'resolveSsrState',
         'serializeViewportCookie',
         'plugin',
+        'commitHydration',
         'IS_SERVER',
         'IS_CLIENT',
         `${body}\nreturn setup;`,
@@ -197,6 +201,7 @@ describe('generated plugin', () => {
         resolveSsrState,
         serializeViewportCookie,
         { install: vi.fn() },
+        commitHydration,
         server,
         !server,
       );
@@ -210,11 +215,22 @@ describe('generated plugin', () => {
       expect.objectContaining({ hints: ['cookie', 'user-agent'] }),
     );
     expect(nuxtApp.payload.responsive).toEqual({ mobile: true, desktop: false });
-    expect(use).toHaveBeenLastCalledWith(expect.anything(), { ssrState: { mobile: true, desktop: false }, hydrating: undefined });
+    expect(use).toHaveBeenLastCalledWith(expect.anything(), {
+      ssrState: { mobile: true, desktop: false },
+      hydrating: undefined,
+      commit: 'manual',
+    });
 
     run(false);
-    expect(use).toHaveBeenLastCalledWith(expect.anything(), { ssrState: { mobile: true, desktop: false }, hydrating: false });
+    expect(use).toHaveBeenLastCalledWith(expect.anything(), {
+      ssrState: { mobile: true, desktop: false },
+      hydrating: false,
+      commit: 'manual',
+    });
     expect(typeof hooks['app:mounted']).toBe('function');
+    expect(commitHydration).not.toHaveBeenCalled();
+    hooks['app:suspense:resolve']();
+    expect(commitHydration).toHaveBeenCalledTimes(1);
     Object.assign(window, { innerWidth: 500, innerHeight: 800 });
     hooks['app:mounted']();
     expect(cookie.value).toBe('500x800');
