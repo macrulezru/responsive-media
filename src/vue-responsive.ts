@@ -320,20 +320,55 @@ export interface DefineResponsiveOptions extends SetConfigOptions {
   hydration?: HydrationMode;
 }
 
+export type HydrationCommit = 'auto' | 'manual';
+
 export interface ResponsivePluginOptions {
   ssrState?: Record<string, boolean>;
   hydration?: HydrationMode;
   hydrating?: boolean;
+  commit?: HydrationCommit;
+  commitTimeout?: number;
 }
 
-function wrapMount(app: App, mirror: AppMirror, seed: ResponsiveState, hydrating: boolean | undefined): void {
+const DEFAULT_COMMIT_TIMEOUT = 10000;
+const pendingCommits = new Set<() => void>();
+
+export function commitHydration(): void {
+  Array.from(pendingCommits).forEach((commit) => commit());
+}
+
+function wrapMount(
+  app: App,
+  mirror: AppMirror,
+  seed: ResponsiveState,
+  hydrating: boolean | undefined,
+  commit: HydrationCommit,
+  commitTimeout: number,
+): void {
   const original = app.mount;
   app.mount = ((container: string | Element, ...rest: unknown[]) => {
     const element = typeof container === 'string' ? document.querySelector(container) : container;
     const isHydrating = hydrating ?? (element instanceof Element && element.hasChildNodes());
     if (isHydrating) mirror.freeze(seed);
     const result = (original as (...args: unknown[]) => unknown).call(app, container, ...rest);
-    if (isHydrating) nextTick(() => mirror.commit());
+    if (!isHydrating) return result;
+
+    let done = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      if (timer !== undefined) clearTimeout(timer);
+      pendingCommits.delete(finish);
+      mirror.commit();
+    };
+
+    if (commit === 'manual') {
+      pendingCommits.add(finish);
+      if (commitTimeout > 0) timer = setTimeout(finish, commitTimeout);
+    } else {
+      nextTick(finish);
+    }
     return result;
   }) as typeof app.mount;
 }
@@ -378,6 +413,7 @@ export function defineResponsive<C extends Record<string, MediaQueryConfig>>(
     useBreakpoints: () => useBreakpoints<Extract<keyof C, string>>(),
     useResponsiveValue: <T>(map: Partial<Record<Extract<keyof C, string>, T>>, fallback?: T) =>
       useResponsiveValue<T>(map as Record<string, T>, fallback),
+    commitHydration,
     plugin: {
       install(app: App, installOptions: ResponsivePluginOptions = {}) {
         const mode = installOptions.hydration ?? hydration ?? 'immediate';
@@ -397,7 +433,14 @@ export function defineResponsive<C extends Record<string, MediaQueryConfig>>(
         const mirror = createAppMirror(responsiveState);
         app.provide(RESPONSIVE_KEY, mirror.state);
         if (mode === 'deferred') {
-          wrapMount(app, mirror, { ...responsiveState.getSsrState(), ...installOptions.ssrState }, installOptions.hydrating);
+          wrapMount(
+            app,
+            mirror,
+            { ...responsiveState.getSsrState(), ...installOptions.ssrState },
+            installOptions.hydrating,
+            installOptions.commit ?? 'auto',
+            installOptions.commitTimeout ?? DEFAULT_COMMIT_TIMEOUT,
+          );
         }
       },
     },

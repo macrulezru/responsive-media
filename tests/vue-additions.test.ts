@@ -284,3 +284,93 @@ describe('server render', () => {
     mock.install();
   });
 });
+
+describe('manual hydration commit', () => {
+  const config = {
+    mobile: [{ type: 'max-width' as const, value: 600 }],
+    desktop: [{ type: 'min-width' as const, value: 601 }],
+  };
+
+  const Layout = defineComponent({
+    setup() {
+      const state = useResponsive<{ mobile: boolean; desktop: boolean }>();
+      return () => h('main', state.mobile ? 'mobile layout' : 'desktop layout');
+    },
+  });
+
+  async function serverHtml() {
+    mock.uninstall();
+    const hooks = defineResponsive(config, { ssrState: { desktop: true } });
+    const app = createSSRApp(Layout);
+    app.use(hooks.plugin);
+    const html = await renderToString(app);
+    mock.install();
+    return html;
+  }
+
+  function mountOver(html: string, install: object) {
+    mock.setViewport({ width: 500 });
+    const hooks = defineResponsive(config, { hydration: 'deferred', ssrState: { desktop: true } });
+    const warnings: string[] = [];
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    document.body.appendChild(container);
+    const app = createSSRApp(Layout);
+    app.config.warnHandler = (message) => warnings.push(message);
+    app.use(hooks.plugin, install);
+    app.mount(container);
+    return { hooks, warnings, container };
+  }
+
+  it('keeps the server state until commitHydration() is called, however many ticks pass', async () => {
+    const html = await serverHtml();
+    const { hooks, warnings, container } = mountOver(html, { commit: 'manual', commitTimeout: 0 });
+
+    for (let i = 0; i < 5; i++) await nextTick();
+    expect(container.textContent).toBe('desktop layout');
+
+    hooks.commitHydration();
+    await nextTick();
+    expect(container.textContent).toBe('mobile layout');
+    expect(warnings.filter((message) => /hydration/i.test(message))).toEqual([]);
+    container.remove();
+  });
+
+  it('commits by itself after commitTimeout so a page that never reports completion is not stuck', async () => {
+    vi.useFakeTimers();
+    try {
+      const html = await serverHtml();
+      const { container } = mountOver(html, { commit: 'manual', commitTimeout: 200 });
+      await nextTick();
+      expect(container.textContent).toBe('desktop layout');
+
+      vi.advanceTimersByTime(250);
+      await nextTick();
+      expect(container.textContent).toBe('mobile layout');
+      container.remove();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('commits every waiting app once, and calling it again does nothing', async () => {
+    const html = await serverHtml();
+    const { hooks, container } = mountOver(html, { commit: 'manual', commitTimeout: 0 });
+    hooks.commitHydration();
+    hooks.commitHydration();
+    await nextTick();
+    expect(container.textContent).toBe('mobile layout');
+    expect(() => hooks.commitHydration()).not.toThrow();
+    container.remove();
+  });
+
+  it('leaves the automatic mode as it was: the switch happens on the next tick', async () => {
+    const html = await serverHtml();
+    const { container } = mountOver(html, {});
+    expect(container.textContent).toBe('desktop layout');
+    await nextTick();
+    await nextTick();
+    expect(container.textContent).toBe('mobile layout');
+    container.remove();
+  });
+});
