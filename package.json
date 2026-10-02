@@ -1,6 +1,6 @@
 {
   "name": "responsive-media",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "Reactive state from CSS media and container queries — breakpoint helpers, AND/OR conditions and CSS-var sync, hydration-safe SSR with request hints, typed from your config. Vanilla JS / Vue 3 / React / Nuxt.",
   "author": "macrulez <macrulezru@gmail.com> (https://macrulez.ru/en)",
   "homepage": "https://npm.vuecraft.ru/en/packages/responsive-media/",
@@ -49,6 +49,7 @@
     "README.md",
     "LICENSE"
   ],
+  "sideEffects": false,
   "engines": {
     "node": ">=18"
   },
@@ -59,7 +60,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "size": "node scripts/size.mjs"
   },
   "repository": {
     "type": "git",
@@ -93,6 +95,7 @@
     "@typescript-eslint/eslint-plugin": "^8.53.0",
     "@typescript-eslint/parser": "^8.53.0",
     "@vitest/coverage-v8": "^3.0.0",
+    "esbuild": "^0.28.2",
     "eslint": "^9.39.2",
     "eslint-plugin-vue": "^10.7.0",
     "jsdom": "^26.0.0",
@@ -102,9 +105,9 @@
     "vue": "^3.5.34"
   },
   "peerDependencies": {
+    "@nuxt/kit": "^3.9.0 || ^4.0.0",
     "react": "^19.0.0",
-    "vue": "^3.5.27",
-    "@nuxt/kit": "^3.9.0 || ^4.0.0"
+    "vue": "^3.5.27"
   },
   "peerDependenciesMeta": {
     "vue": {

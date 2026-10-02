@@ -17,13 +17,14 @@ import {
   getCurrentInstance,
 } from '@vue/runtime-core';
 import type { App, Ref, ComputedRef, MaybeRefOrGetter } from '@vue/runtime-core';
-import { responsiveState, setResponsiveConfig, createResponsiveState, match } from './create-responsive';
+import { responsiveState, setResponsiveConfig } from './global-state';
+import { createResponsiveState, match } from './viewport-state';
 import type {
   MediaQueryConfig,
   ResponsiveState,
   SetConfigOptions,
   ReactiveResponsiveState,
-} from './create-responsive';
+} from './viewport-state';
 import { subscribeMediaQuery } from './media-query';
 import { createContainerState } from './container-state';
 import type { ConfigToState } from './responsive.enum';

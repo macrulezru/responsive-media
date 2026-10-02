@@ -1,6 +1,6 @@
 import { AccessibilityPreset } from './presets';
-import { createResponsiveState } from './create-responsive';
-import type { ReactiveResponsiveState } from './create-responsive';
+import { createResponsiveState } from './viewport-state';
+import type { ReactiveResponsiveState } from './viewport-state';
 
 export interface UserPreferences {
   dark: boolean;
